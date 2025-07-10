@@ -1,0 +1,16 @@
+{
+    "name": "agent",
+    "position": {
+        "x": -0.4,
+        "y": 0.9220515489578247,
+        "z": 4.1
+    },
+    "rotation": {
+        "x": 0.0,
+        "y": 225.0,
+        "z": 0.0
+    },
+    "cameraHorizon": -0.0,
+    "isStanding": true,
+    "inHighFrictionArea": false
+}

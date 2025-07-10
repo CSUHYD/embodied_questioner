@@ -1,0 +1,21 @@
+ai2thor==5.0.0
+Flask==3.1.0
+opencv-python==4.7.0.72
+accelerate==1.3.0
+FlagEmbedding==1.3.4
+flash_attn==2.7.4.post1
+openai==1.60.0
+opencv-python-headless==4.11.0.86
+peft==0.14.0
+qwen-vl-utils==0.0.8
+safetensors==0.5.2
+sentence-transformers==3.4.1
+sentencepiece==0.2.0
+tiktoken==0.7.0
+tokenizers==0.21.0
+torch==2.5.1
+torchvision==0.20.1
+transformers @ git+https://github.com/huggingface/transformers.git@0de15c988b0d27758ce360adb2627e9ea99e91b3
+triton==3.1.0
+vllm==0.7.2
+numpy

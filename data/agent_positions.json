@@ -1,0 +1,1036 @@
+{
+    "57": {
+        "scene": "FloorPlan1",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Pick up a Cup from the room.",
+        "Cabinet|+00.68|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "58": {
+        "scene": "FloorPlan1",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Pick up a Cup from the room.",
+        "Cabinet|+00.68|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "59": {
+        "scene": "FloorPlan1",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Pick up a Cup from the room.",
+        "Cabinet|+00.68|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "69": {
+        "scene": "FloorPlan1",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Pick up a Plate from the room.",
+        "Cabinet|+00.72|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.75,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "70": {
+        "scene": "FloorPlan1",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Pick up a Plate from the room.",
+        "Cabinet|+00.72|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.75,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "71": {
+        "scene": "FloorPlan1",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Pick up a Plate from the room.",
+        "Cabinet|+00.72|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.75,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "75": {
+        "scene": "FloorPlan1",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Grab a WineBottle from the room.",
+        "Cabinet|-00.73|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": -1.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "76": {
+        "scene": "FloorPlan1",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Grab a WineBottle from the room.",
+        "Cabinet|-00.73|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": -1.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "77": {
+        "scene": "FloorPlan1",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Grab a WineBottle from the room.",
+        "Cabinet|-00.73|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": -1.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "93": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_and_put_in_closerep",
+        "taskname": "put the Bowl in the Cabinet",
+        "Cabinet|+00.68|+00.50|-02.20": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 60,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "94": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_and_put_in_closerep",
+        "taskname": "put the Bowl in the Cabinet",
+        "Cabinet|+00.68|+00.50|-02.20": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 60,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "95": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_and_put_in_closerep",
+        "taskname": "put the Bowl in the Cabinet",
+        "Cabinet|+00.68|+00.50|-02.20": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 60,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "102": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_and_put_in_closerep",
+        "taskname": "put the Kettle in the Cabinet",
+        "Cabinet|+00.68|+00.50|-02.20": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 60,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "103": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_and_put_in_closerep",
+        "taskname": "put the Kettle in the Cabinet",
+        "Cabinet|+00.68|+00.50|-02.20": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 60,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "104": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_and_put_in_closerep",
+        "taskname": "put the Kettle in the Cabinet",
+        "Cabinet|+00.68|+00.50|-02.20": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 60,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "113": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put",
+        "taskname": "put the Plate in the CounterTop",
+        "Cabinet|+00.72|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.75,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "114": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put",
+        "taskname": "put the Plate in the CounterTop",
+        "Cabinet|+00.72|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.75,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "118": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put_in_closerep",
+        "taskname": "put the Cup in the Microwave",
+        "Cabinet|+00.68|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        },
+        "Microwave|-00.24|+01.69|-02.53": {
+            "agent_teleport_position": {
+                "x": -0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "119": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put_in_closerep",
+        "taskname": "put the Cup in the Microwave",
+        "Cabinet|+00.68|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        },
+        "Microwave|-00.24|+01.69|-02.53": {
+            "agent_teleport_position": {
+                "x": -0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "120": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put_in_closerep",
+        "taskname": "put the Cup in the Microwave",
+        "Cabinet|+00.68|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        },
+        "Microwave|-00.24|+01.69|-02.53": {
+            "agent_teleport_position": {
+                "x": -0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "124": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put_in_closerep",
+        "taskname": "put the Plate in the Microwave",
+        "Cabinet|+00.72|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.75,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        },
+        "Microwave|-00.24|+01.69|-02.53": {
+            "agent_teleport_position": {
+                "x": -0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "125": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put_in_closerep",
+        "taskname": "put the Plate in the Microwave",
+        "Cabinet|+00.72|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.75,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        },
+        "Microwave|-00.24|+01.69|-02.53": {
+            "agent_teleport_position": {
+                "x": -0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "126": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put_in_closerep",
+        "taskname": "put the Plate in the Microwave",
+        "Cabinet|+00.72|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.75,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        },
+        "Microwave|-00.24|+01.69|-02.53": {
+            "agent_teleport_position": {
+                "x": -0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "127": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put_in_closerep",
+        "taskname": "put the WineBottle in the Fridge",
+        "Cabinet|-00.73|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": -1.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "128": {
+        "scene": "FloorPlan1",
+        "tasktype": "pickup_from_closerep_and_put_in_closerep",
+        "taskname": "put the WineBottle in the Fridge",
+        "Cabinet|-00.73|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": -1.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "129": {
+        "scene": "FloorPlan1",
+        "tasktype": "ordered_pickup_two_object_and_put1000",
+        "taskname": "First, place Cup on GarbageCan, then, place Mug on SinkBasin. ",
+        "Cabinet|+00.68|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.25,
+                "y": 0.900999128818512,
+                "z": -1.5
+            },
+            "agent_cameraHorizon": 0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "133": {
+        "scene": "FloorPlan1",
+        "tasktype": "ordered_pickup_two_object_and_put",
+        "taskname": "First, place Apple on GarbageCan, then, place Plate on SinkBasin.",
+        "Cabinet|+00.72|+02.02|-02.46": {
+            "agent_teleport_position": {
+                "x": 0.7000000476837158,
+                "y": 0.900999128818512,
+                "z": -1.2999999523162842
+            },
+            "agent_cameraHorizon": -18.0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "301": {
+        "scene": "FloorPlan3",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Grab a Tomato from the room.",
+        "Fridge|+01.01|+00.23|+01.92": {
+            "agent_teleport_position": {
+                "x": 0.10000000149011612,
+                "y": 1.123205542564392,
+                "z": 1.9000000953674316
+            },
+            "agent_cameraHorizon": 33.0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 90.0,
+                "z": 0.0
+            }
+        }
+    },
+    "302": {
+        "scene": "FloorPlan3",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Grab a Tomato from the room.",
+        "Fridge|+01.01|+00.23|+01.92": {
+            "agent_teleport_position": {
+                "x": 0.10000000149011612,
+                "y": 1.123205542564392,
+                "z": 1.9000000953674316
+            },
+            "agent_cameraHorizon": 33.0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 90.0,
+                "z": 0.0
+            }
+        }
+    },
+    "303": {
+        "scene": "FloorPlan3",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Grab a Tomato from the room.",
+        "Fridge|+01.01|+00.23|+01.92": {
+            "agent_teleport_position": {
+                "x": 0.10000000149011612,
+                "y": 1.123205542564392,
+                "z": 1.9000000953674316
+            },
+            "agent_cameraHorizon": 33.0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 90.0,
+                "z": 0.0
+            }
+        }
+    },
+    "333": {
+        "scene": "FloorPlan3",
+        "tasktype": "ordered_pickup_two_object_and_put",
+        "taskname": "First, place Tomato on GarbageCan, then, place Fork on SinkBasin.",
+        "Fridge|+01.01|+00.23|+01.92": {
+            "agent_teleport_position": {
+                "x": 0.10000000149011612,
+                "y": 1.123205542564392,
+                "z": 1.9000000953674316
+            },
+            "agent_cameraHorizon": 33.0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 90.0,
+                "z": 0.0
+            }
+        }
+    },
+    "336": {
+        "scene": "FloorPlan3",
+        "tasktype": "ordered_pickup_two_object_and_put",
+        "taskname": "First, place Tomato on GarbageCan, then, place Spoon on SinkBasin.",
+        "Fridge|+01.01|+00.23|+01.92": {
+            "agent_teleport_position": {
+                "x": 0.10000000149011612,
+                "y": 1.123205542564392,
+                "z": 1.9000000953674316
+            },
+            "agent_cameraHorizon": 33.0,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 90.0,
+                "z": 0.0
+            }
+        }
+    },
+    "449": {
+        "scene": "FloorPlan202",
+        "tasktype": "pickup_and_put",
+        "taskname": "put the Book in the Shelf",
+        "Shelf|+00.62|+00.24|+00.34": {
+            "agent_teleport_position": {
+                "x": 0.7000000476837158,
+                "y": 0.9010459184646606,
+                "z": 0.9000000953674316
+            },
+            "agent_cameraHorizon": 60.000003814697266,
+            "agent_isstanding": false,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "450": {
+        "scene": "FloorPlan202",
+        "tasktype": "pickup_and_put",
+        "taskname": "put the Book in the Shelf",
+        "Shelf|+00.62|+00.24|+00.34": {
+            "agent_teleport_position": {
+                "x": 0.7000000476837158,
+                "y": 0.9010459184646606,
+                "z": 0.9000000953674316
+            },
+            "agent_cameraHorizon": 60.000003814697266,
+            "agent_isstanding": false,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 180.0,
+                "z": 0.0
+            }
+        }
+    },
+    "451": {
+        "scene": "FloorPlan202",
+        "tasktype": "pickup_and_put",
+        "taskname": "put the Book in the Shelf",
+        "CoffeeTable|-01.73|+00.01|+02.36": {
+            "agent_teleport_position": {
+                "x": -1.25,
+                "y": 0.9010459184646606,
+                "z": 1.75
+            },
+            "agent_cameraHorizon": 53,
+            "agent_isstanding": false,
+            "agent_rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "452": {
+        "scene": "FloorPlan202",
+        "tasktype": "pickup_and_put",
+        "taskname": "put the Book in the Shelf",
+        "CoffeeTable|-01.73|+00.01|+02.36": {
+            "agent_teleport_position": {
+                "x": -1.25,
+                "y": 0.9010459184646606,
+                "z": 1.75
+            },
+            "agent_cameraHorizon": 53,
+            "agent_isstanding": false,
+            "agent_rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "530": {
+        "scene": "FloorPlan203",
+        "tasktype": "ordered_pickup_two_object_and_put",
+        "taskname": "First, place Vase on Box, then, place Pillow on Sofa.",
+        "Box|+00.96|+00.29|+06.19": {
+            "agent_teleport_position": {
+                "x": 0.10000000149011612,
+                "y": 0.9070531129837036,
+                "z": 6.199999809265137
+            },
+            "agent_cameraHorizon": 41.000003814697266,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 90.0,
+                "z": 0.0
+            }
+        }
+    },
+    "548": {
+        "scene": "FloorPlan203",
+        "tasktype": "ordered_pickup_two_object_and_put",
+        "taskname": "First, place Vase on CoffeeTable, then, place KeyChain on Drawer.",
+        "CoffeeTable|+00.41|+00.01|+02.61": {
+            "agent_teleport_position": {
+                "x": -0.3000001907348633,
+                "y": 0.9070531129837036,
+                "z": 2.6000001430511475
+            },
+            "agent_cameraHorizon": 60.00001525878906,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 90.0,
+                "z": 0.0
+            }
+        }
+    },
+    "728": {
+        "scene": "FloorPlan401",
+        "tasktype": "pickup_and_put",
+        "taskname": "put the Candle in the Shelf",
+        "Shelf|-02.59|+01.53|+03.91": {
+            "agent_teleport_position": {
+                "x": -2.6000001430511475,
+                "y": 0.9016162753105164,
+                "z": 3.5
+            },
+            "agent_cameraHorizon": 30,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "729": {
+        "scene": "FloorPlan401",
+        "tasktype": "pickup_and_put",
+        "taskname": "put the Candle in the Shelf",
+        "Shelf|-02.59|+01.53|+03.91": {
+            "agent_teleport_position": {
+                "x": -2.6000001430511475,
+                "y": 0.9016162753105164,
+                "z": 3.5
+            },
+            "agent_cameraHorizon": 30,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "730": {
+        "scene": "FloorPlan401",
+        "tasktype": "pickup_and_put",
+        "taskname": "put the Candle in the Shelf",
+        "Shelf|-02.59|+01.53|+03.91": {
+            "agent_teleport_position": {
+                "x": -2.6000001430511475,
+                "y": 0.9016162753105164,
+                "z": 3.5
+            },
+            "agent_cameraHorizon": 60.000003814697266,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "731": {
+        "scene": "FloorPlan401",
+        "tasktype": "pickup_and_put",
+        "taskname": "put the DishSponge in the Shelf",
+        "Shelf|-02.59|+01.53|+03.91": {
+            "agent_teleport_position": {
+                "x": -2.5999999046325684,
+                "y": 0.9016162753105164,
+                "z": 3.5
+            },
+            "agent_cameraHorizon": 23.000001907348633,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "756": {
+        "scene": "FloorPlan403",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Get a DishSponge from the room.",
+        "Cabinet|-01.36|+00.43|+02.87": {
+            "agent_teleport_position": {
+                "x": -0.30000001192092896,
+                "y": 0.9093819856643677,
+                "z": 1.899999976158142
+            },
+            "agent_cameraHorizon": 33.000003814697266,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "757": {
+        "scene": "FloorPlan403",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Get a DishSponge from the room.",
+        "Cabinet|-01.36|+00.43|+02.87": {
+            "agent_teleport_position": {
+                "x": -0.30000001192092896,
+                "y": 0.9093819856643677,
+                "z": 1.899999976158142
+            },
+            "agent_cameraHorizon": 33.000003814697266,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "758": {
+        "scene": "FloorPlan403",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Get a DishSponge from the room.",
+        "Cabinet|-01.36|+00.43|+02.87": {
+            "agent_teleport_position": {
+                "x": -0.30000001192092896,
+                "y": 0.9093819856643677,
+                "z": 1.899999976158142
+            },
+            "agent_cameraHorizon": 33.000003814697266,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "759": {
+        "scene": "FloorPlan403",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Get a DishSponge from the room.",
+        "Cabinet|-01.36|+00.43|+02.87": {
+            "agent_teleport_position": {
+                "x": -0.30000001192092896,
+                "y": 0.9093819856643677,
+                "z": 1.899999976158142
+            },
+            "agent_cameraHorizon": 33.000003814697266,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "760": {
+        "scene": "FloorPlan403",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Get a DishSponge from the room.",
+        "Cabinet|-00.34|+00.43|+02.87": {
+            "agent_teleport_position": {
+                "x": -0.30000001192092896,
+                "y": 0.9093819856643677,
+                "z": 1.899999976158142
+            },
+            "agent_cameraHorizon": 33.000003814697266,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "761": {
+        "scene": "FloorPlan403",
+        "tasktype": "single_pickup_from_closerep",
+        "taskname": "Get a DishSponge from the room.",
+        "Cabinet|-00.34|+00.43|+02.87": {
+            "agent_teleport_position": {
+                "x": -0.30000001192092896,
+                "y": 0.9093819856643677,
+                "z": 1.899999976158142
+            },
+            "agent_cameraHorizon": 33.000003814697266,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "773": {
+        "scene": "FloorPlan404",
+        "tasktype": "single_pickup",
+        "taskname": "Collect a SprayBottle from the room.",
+        "Shelf|-01.17|+00.28|+02.16": {
+            "agent_teleport_position": {
+                "x": -1.2000000476837158,
+                "y": 0.9031611680984497,
+                "z": 1.2000000476837158
+            },
+            "agent_cameraHorizon": 34.999996185302734,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    },
+    "780": {
+        "scene": "FloorPlan404",
+        "tasktype": "pickup_and_put",
+        "taskname": "put the SprayBottle in the GarbageCan",
+        "Shelf|-01.17|+00.28|+02.16": {
+            "agent_teleport_position": {
+                "x": -1.2000000476837158,
+                "y": 0.9031611680984497,
+                "z": 1.2000000476837158
+            },
+            "agent_cameraHorizon": 34.999996185302734,
+            "agent_isstanding": true,
+            "agent_rotation": {
+                "x": -0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    }
+}
