@@ -1,0 +1,120 @@
+[
+    {
+        "scene": "FloorPlan1",
+        "tasktype": "single_search",
+        "instruction_idx": 0,
+        "taskname": "Look for the Apple in the room.",
+        "trajectory": [
+            "<Observation>\nIn the room, I observe a modern kitchen setup. To my left, there is a shelving unit with various items placed on it. A black stool is positioned near the shelving unit. In the center, there is a counter with a few objects, including a book, some fruits, and a small houseplant. To the right, there is a cabinet with a fridge integrated into it. Above the counter, there are cabinets with drawers. A window is visible in the background, allowing natural light to enter the room. A garbage can is also present near the fridge. The overall layout suggests a functional and organized kitchen space.\n</Observation>",
+            "<Planning>\nTo find the Apple in the room, I will follow the determined search order: ['Cabinet', 'CounterTop', 'Fridge'].\n\n1. **Cabinet**: I will start by checking the cabinets, as they are a common place to store apples and other fruits. The cabinets in the image appear to be well-organized, so I will look inside each one systematically.\n\n2. **CounterTop**: Next, I will move to the countertop area. Apples are often placed on countertops for easy access and display. The countertop in the image has various items, including fruits, so this is a likely place to find the Apple.\n\n3. **Fridge**: Finally, I will check the fridge. While apples are not typically stored in the fridge, it is still a possibility, especially if someone is trying to keep them fresh. I will look inside the fridge to ensure no Apple is missed.\n\nBy following this order, I aim to efficiently locate the Apple in the room.\n</Planning>",
+            "<DecisionMaking>navigate to Cabinet</DecisionMaking>",
+            "<Thinking>\nI am currently near the Cabinet, which is closed. Since my task is to find the Apple, I need to systematically search the room by checking different locations. Given that the Cabinet is a typical storage place for items, it makes sense to open it to check if the Apple is inside. The Cabinet is one of the first locations on my search list, so accessing its contents is a logical next step. Opening the Cabinet will allow me to inspect its interior and determine if the Apple is stored there.\n</Thinking>",
+            "<Planning>\nTo proceed with my task, I will open the Cabinet. This will enable me to look inside and see if the Apple is located there. Once I have checked the Cabinet, I will move on to the next location on my search list, which is the CounterTop. The CounterTop is a common place to keep apples, especially if they are being prepared for use or display. After checking the Cabinet and the CounterTop, I will proceed to the Fridge to complete my search. By following this systematic approach, I aim to efficiently locate the Apple in the room.\n</Planning>",
+            "<DecisionMaking>open Cabinet</DecisionMaking>",
+            "<Reflection>\nI am in a kitchen environment, and the most recent action I took was opening the Cabinet to search for the Apple. Upon inspecting the Cabinet, I have concluded that it does not contain the Apple. The Cabinet appears to be empty or does not hold any items resembling an Apple. The kitchen setting is visible, with various elements such as the countertop, stove, and tiled walls. The next logical step in my search should be to move to a different location where an Apple might be stored or displayed. Given the typical layout of a kitchen, the CounterTop is a common place for fruits and other items, making it a reasonable next target for my search.\n</Reflection>",
+            "<Planning>\nSince the Cabinet did not yield the Apple, I will now shift my focus to the CounterTop. The CounterTop is an area where apples are commonly placed for easy access or display. By moving to the CounterTop, I will continue my systematic search of the room. Once I have checked the CounterTop, I will evaluate whether the Apple is present there. If it is not found, I will proceed to the next logical location, which is the Fridge, as apples are sometimes stored there to keep them fresh. By following this structured approach, I aim to efficiently locate the Apple in the room.\n'/<Planning>",
+            "<DecisionMaking>close Cabinet</DecisionMaking>",
+            "<Reflection>\nThe current view shows a section of a kitchen with a focus on a cabinet area. The cabinet appears to be closed, and there are no visible signs of an Apple in this immediate vicinity. Given the previous actions, I have already checked the cabinet and determined that it does not contain the Apple. The countertop, visible in the image, is a likely place to find the Apple since it is a common area for placing fruits. The countertop in this image appears to have some items on it, which suggests it could be a good location to search next. The systematic search plan involves checking locations in a logical order, starting with the cabinet, then the countertop, and finally the fridge. Since the cabinet has been ruled out, the next logical step is to navigate to the countertop to continue the search. By moving to the countertop, I can inspect the area more closely and look for any signs of the Apple that might have been missed initially. This approach ensures a thorough and systematic search of the room.\n</Reflection>",
+            "<DecisionMaking>navigate to CounterTop</DecisionMaking>",
+            "<Thinking>\\nThe current perspective shows a countertop in a kitchen with various items placed on it, including an apple, a loaf of bread, a tomato, a knife, and a book. The apple is clearly visible on the left side of the countertop, indicating that the search for the Apple is successful. The systematic search approach has been effective, leading to the discovery of the Apple on the CounterTop as planned. With the Apple now located, the task is complete. The next steps, such as checking the Fridge, are unnecessary, as the goal has been achieved. The kitchen environment is well-lit, and the countertop provides a clear view of the objects, confirming the accuracy of the search.\\n</Thinking>"
+        ],
+        "images": [
+            "data_single_search/FloorPlan1_single_search_0_a/0_init_observe.png",
+            "data_single_search/FloorPlan1_single_search_0_a/1_Cabinet|-01.69|+02.02|-02.46.png",
+            "data_single_search/FloorPlan1_single_search_0_a/2_Cabinet|-01.69|+02.02|-02.46.png",
+            "data_single_search/FloorPlan1_single_search_0_a/3_Cabinet|-01.69|+02.02|-02.46.png",
+            "data_single_search/FloorPlan1_single_search_0_a/4_CounterTop|-00.08|+01.15|00.00.png"
+        ],
+        "flag": "",
+        "time": 1517.0921869277954,
+        "task_metadata": {
+            "taskname": "Look for the Apple in the room.",
+            "tasktype": "single_search",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan1/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-00.08|+01.15|00.00",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.08|+01.15|00.00",
+                        "Apple|-00.47|+01.15|+00.48"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.08|+01.15|00.00",
+                        "Apple|-00.47|+01.15|+00.48"
+                    ]
+                }
+            ],
+            "totalreward": 2
+        }
+    },
+    {
+        "scene": "FloorPlan1",
+        "tasktype": "single_search",
+        "instruction_idx": 0,
+        "taskname": "Look for the Apple in the room.",
+        "trajectory": [
+            "<Observation>\nI see a modern kitchen with a window allowing natural light. The countertop extends from the main cabinetry, featuring various objects including books, a houseplant, and a coffee machine. A shelving unit is present, holding kitchen items. To the right, there is a large refrigerator. The cabinetry is white, with a countertop that holds a bread box and some fruits. Stools are placed near the island counter for seating. A garbage can is visible in the corner. The drawers are integrated into the cabinetry, blending seamlessly with the design. The overall layout suggests a functional and well-organized kitchen space.\n</Observation>",
+            "<Planning>\nI will start my search for the Apple by checking the cabinets, as they are often used to store various items, including fruits. Next, I will examine the countertop, as it is a common place for people to leave fruits out for easy access or display. Lastly, I will inspect the fridge, as apples are sometimes stored there to keep them fresh. This order ensures a systematic approach to locate the Apple efficiently.\n</Planning>",
+            "<DecisionMaking>navigate to Cabinet</DecisionMaking>",
+            "<Thinking>...\nI am currently near the cabinet, and it appears to be closed. Since cabinets are a common place to store items, including fruits like apples, it makes sense to check inside. Opening the cabinet will allow me to inspect its contents and determine if the apple is stored there. This aligns with my previous plan to check the cabinets first, as they are a logical starting point for finding stored items. If the apple is not in the cabinet, I will need to move on to the next locations in my search plan, which are the countertop and the fridge. By systematically checking these areas, I can efficiently locate the apple.\n\n</Thinking>",
+            "<Planning>...\nI will open the cabinet to check its contents for the apple. This action is consistent with my systematic approach to searching for the apple, starting with the cabinets as a likely storage location. If the apple is not found in the cabinet, I will proceed to inspect the countertop next, as it is a common area for displaying or leaving out fruits. Finally, I will check the fridge, as apples might be stored there to keep them fresh. This methodical exploration ensures that I cover all potential hiding spots in an organized manner, increasing the likelihood of finding the apple quickly and effectively.\n\n</Planning>",
+            "<DecisionMaking>open Cabinet</DecisionMaking>",
+            "<Reflection>\nThe image shows a modern kitchen with a clean, minimalist design. The countertop is visible, along with a microwave and some cabinetry. The wall is tiled with white subway tiles, and a section of the floor is visible, featuring a textured surface. The cabinets are white and appear to be closed, indicating that I have just finished checking inside one of them without success. \n\nReflecting on my previous actions, I opened a cabinet in search of the apple, but it did not contain the apple. This aligns with my systematic approach to search systematically through the room. Given that the cabinet is not yielding the apple, my next logical step is to proceed to the countertop, as it is a common area where fruits are often placed for easy access or display. The countertop is visible and within reach, making it the next priority in my search. \n\nMy new plan is to move to the countertop and inspect it for the apple. If it is not found there, I will proceed to the fridge, as apples are sometimes stored there to keep them fresh. This methodical approach ensures that I cover all potential locations where the apple might be found, moving from the most likely storage areas to the more specific ones, such as the fridge.\n\n</Reflection>",
+            "<DecisionMaking>close Cabinet</DecisionMaking>",
+            "<Reflection>...\nThe image shows a modern kitchen setup with white cabinetry and a countertop that appears clean and organized. The microwave is visible, indicating that the countertop is a functional space where kitchen appliances are placed. The floor is not fully visible, but the countertop extends to the edge of the image, suggesting a spacious and well-organized kitchen. The cabinets are closed, indicating that I have already checked inside them without success. The countertop seems to be a likely place where fruits, including apples, might be left out for easy access or display. Given that the cabinets did not yield the apple, it makes logical sense to proceed to the countertop as the next step in my search. The countertop is a common area for placing fruits, so it is a reasonable place to look next in my systematic search.\n\n</Reflection>",
+            "<Planning>...\nReflecting on my previous actions, I have already checked the cabinets and did not find the apple. This suggests that the apple is more likely to be in another location, such as on the countertop or in the fridge. Since the countertop is a common place for displaying fruits and is easily accessible, it is the next logical step in my search. The countertop is visible in the image, and it appears to be a potential location for the apple. By moving to the countertop, I can systematically inspect the surface and any items placed on it, such as baskets or containers, to determine if the apple is there. If the apple is not found on the countertop, my next step will be to proceed to the fridge, as apples are sometimes stored there to keep them fresh. This methodical approach ensures that I cover all potential locations where the apple might be found, moving from the most likely storage areas to the more specific ones, such as the fridge.\n\n'/<Planning>",
+            "<DecisionMaking>navigate to CounterTop</DecisionMaking>",
+            "<Thinking>...\nI am now positioned at the countertop, having systematically searched the cabinets without success. The countertop is visible and holds various items, including a red apple, which matches the object I am looking for. The apple is clearly identifiable by its bright red color and distinct shape. This confirms that I have successfully located the apple, fulfilling the task's requirement. Given that the apple is now found, my next steps are unnecessary, and I can conclude the search. The systematic approach of checking the cabinets first and then moving to the countertop proved effective, ensuring that I covered all likely locations in a logical sequence.\n\n</Thinking>"
+        ],
+        "images": [
+            "data_single_search/FloorPlan1_single_search_0_a/0_init_observe.png",
+            "data_single_search/FloorPlan1_single_search_0_a/1_Cabinet|-01.69|+02.02|-02.46.png",
+            "data_single_search/FloorPlan1_single_search_0_a/2_Cabinet|-01.69|+02.02|-02.46.png",
+            "data_single_search/FloorPlan1_single_search_0_a/3_Cabinet|-01.69|+02.02|-02.46.png",
+            "data_single_search/FloorPlan1_single_search_0_a/4_CounterTop|-00.08|+01.15|00.00.png"
+        ],
+        "flag": "",
+        "time": 3902.590091943741,
+        "task_metadata": {
+            "taskname": "Look for the Apple in the room.",
+            "tasktype": "single_search",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan1/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-00.08|+01.15|00.00",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.08|+01.15|00.00",
+                        "Apple|-00.47|+01.15|+00.48"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.08|+01.15|00.00",
+                        "Apple|-00.47|+01.15|+00.48"
+                    ]
+                }
+            ],
+            "totalreward": 2
+        }
+    }
+]
