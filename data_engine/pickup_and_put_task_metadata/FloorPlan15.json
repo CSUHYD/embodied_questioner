@@ -1,0 +1,67 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the Plate",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan15/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-03.38|+00.95|+03.34",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-03.38|+00.95|+03.34",
+                        "Apple|-03.24|+00.97|+02.94"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|-03.24|+00.97|+02.94",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|-03.24|+00.97|+02.94"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-03.38|+00.95|+03.34",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-03.38|+00.95|+03.34",
+                        "Plate|-03.01|+00.90|+03.68"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Plate|-03.01|+00.90|+03.68",
+                    "objectType": "Plate",
+                    "baseaction": "put",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-03.38|+00.95|+03.34",
+                        "Plate|-03.01|+00.90|+03.68"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-03.38|+00.95|+03.34",
+                        "Apple|-03.24|+00.97|+02.94",
+                        "Plate|-03.01|+00.90|+03.68"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

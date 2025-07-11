@@ -1,0 +1,71 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the Pan",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan28/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-00.33|+00.98|-01.45",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.33|+00.98|-01.45",
+                        "Apple|-00.40|+00.98|-01.58"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|-00.40|+00.98|-01.58",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|-00.40|+00.98|-01.58"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "StoveBurner|-00.44|+00.92|-02.24",
+                    "objectType": "StoveBurner",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "StoveBurner|-00.22|+00.92|-02.24",
+                        "StoveBurner|-00.44|+00.92|-02.24",
+                        "Pan|-00.22|+00.96|-02.22"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Pan|-00.22|+00.96|-02.22",
+                    "objectType": "Pan",
+                    "baseaction": "put",
+                    "reward": 1,
+                    "relatedObject": [
+                        "StoveBurner|-00.22|+00.92|-02.24",
+                        "StoveBurner|-00.44|+00.92|-02.24",
+                        "Pan|-00.22|+00.96|-02.22"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.33|+00.98|-01.45",
+                        "Apple|-00.40|+00.98|-01.58",
+                        "StoveBurner|-00.22|+00.92|-02.24",
+                        "StoveBurner|-00.44|+00.92|-02.24",
+                        "Pan|-00.22|+00.96|-02.22"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

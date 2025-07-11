@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Book in the Box",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan209/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Dresser|-03.51|+00.00|-05.10",
+                    "objectType": "Dresser",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-03.51|+00.00|-05.10",
+                        "Book|-02.53|+00.70|-05.12"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Book|-02.53|+00.70|-05.12",
+                    "objectType": "Book",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Book|-02.53|+00.70|-05.12"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Box|-02.36|+00.25|-01.65",
+                    "objectType": "Box",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-02.36|+00.25|-01.65"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Box|-02.36|+00.25|-01.65",
+                    "objectType": "Box",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-02.36|+00.25|-01.65"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-03.51|+00.00|-05.10",
+                        "Book|-02.53|+00.70|-05.12",
+                        "Box|-02.36|+00.25|-01.65"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

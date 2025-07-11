@@ -1,0 +1,67 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the Pot",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan23/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "DiningTable|-02.43|+00.00|-01.69",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-02.43|+00.00|-01.69",
+                        "Apple|-02.66|+00.97|-01.55"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|-02.66|+00.97|-01.55",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|-02.66|+00.97|-01.55"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "DiningTable|-02.43|+00.00|-01.69",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-02.43|+00.00|-01.69",
+                        "Pot|-02.24|+00.92|-01.88"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Pot|-02.24|+00.92|-01.88",
+                    "objectType": "Pot",
+                    "baseaction": "put",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-02.43|+00.00|-01.69",
+                        "Pot|-02.24|+00.92|-01.88"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-02.43|+00.00|-01.69",
+                        "Apple|-02.66|+00.97|-01.55",
+                        "Pot|-02.24|+00.92|-01.88"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

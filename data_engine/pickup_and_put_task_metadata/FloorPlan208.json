@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Box in the Ottoman",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan208/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Floor|+00.00|+00.00|+00.00",
+                    "objectType": "Floor",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "Box|-00.56|+00.11|-02.74"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Box|-00.56|+00.11|-02.74",
+                    "objectType": "Box",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-00.56|+00.11|-02.74"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Ottoman|-00.58|+00.01|+01.05",
+                    "objectType": "Ottoman",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Ottoman|-00.58|+00.01|+01.05"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Ottoman|-00.58|+00.01|+01.05",
+                    "objectType": "Ottoman",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Ottoman|-00.58|+00.01|+01.05"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "Box|-00.56|+00.11|-02.74",
+                        "Ottoman|-00.58|+00.01|+01.05"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

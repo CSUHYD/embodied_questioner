@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the AlarmClock in the Dresser",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bedrooms/FloorPlan330/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|+02.44|00.00|-01.60",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|+02.44|00.00|-01.60",
+                        "AlarmClock|+02.29|+00.67|-01.64"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "AlarmClock|+02.29|+00.67|-01.64",
+                    "objectType": "AlarmClock",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "AlarmClock|+02.29|+00.67|-01.64"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Dresser|-01.67|+00.00|-00.15",
+                    "objectType": "Dresser",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-01.67|+00.00|-00.15"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Dresser|-01.67|+00.00|-00.15",
+                    "objectType": "Dresser",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-01.67|+00.00|-00.15"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|+02.44|00.00|-01.60",
+                        "AlarmClock|+02.29|+00.67|-01.64",
+                        "Dresser|-01.67|+00.00|-00.15"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

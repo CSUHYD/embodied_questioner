@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the AlarmClock in the Shelf",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bedrooms/FloorPlan318/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Dresser|-00.70|+00.00|+02.93",
+                    "objectType": "Dresser",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-00.70|+00.00|+02.93",
+                        "AlarmClock|-00.58|+00.67|+02.91"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "AlarmClock|-00.58|+00.67|+02.91",
+                    "objectType": "AlarmClock",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "AlarmClock|-00.58|+00.67|+02.91"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Shelf|+01.77|+00.38|+00.76",
+                    "objectType": "Shelf",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|+01.77|+00.38|+00.76"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Shelf|+01.77|+00.38|+00.76",
+                    "objectType": "Shelf",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|+01.77|+00.38|+00.76"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-00.70|+00.00|+02.93",
+                        "AlarmClock|-00.58|+00.67|+02.91",
+                        "Shelf|+01.77|+00.38|+00.76"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

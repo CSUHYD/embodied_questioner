@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Bowl in the TVStand",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan206/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CoffeeTable|+00.02|00.00|-01.11",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|+00.02|00.00|-01.11",
+                        "Bowl|+00.37|+00.47|-01.05"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Bowl|+00.37|+00.47|-01.05",
+                    "objectType": "Bowl",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bowl|+00.37|+00.47|-01.05"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "TVStand|-01.74|+00.00|-01.06",
+                    "objectType": "TVStand",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "TVStand|-01.74|+00.00|-01.06"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "TVStand|-01.74|+00.00|-01.06",
+                    "objectType": "TVStand",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "TVStand|-01.74|+00.00|-01.06"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|+00.02|00.00|-01.11",
+                        "Bowl|+00.37|+00.47|-01.05",
+                        "TVStand|-01.74|+00.00|-01.06"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Book in the CoffeeTable",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan203/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "DiningTable|-04.30|+00.01|-00.38",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-04.30|+00.01|-00.38",
+                        "Book|-03.72|+00.76|-00.64"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Book|-03.72|+00.76|-00.64",
+                    "objectType": "Book",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Book|-03.72|+00.76|-00.64"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CoffeeTable|+00.41|+00.01|+02.61",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|+00.41|+00.01|+02.61"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "CoffeeTable|+00.41|+00.01|+02.61",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|+00.41|+00.01|+02.61"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-04.30|+00.01|-00.38",
+                        "Book|-03.72|+00.76|-00.64",
+                        "CoffeeTable|+00.41|+00.01|+02.61"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

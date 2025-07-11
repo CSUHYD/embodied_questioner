@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the CounterTop",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan16/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "DiningTable|+02.42|+00.00|+03.93",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|+02.42|+00.00|+03.93",
+                        "Apple|+01.95|+00.87|+03.77"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|+01.95|+00.87|+03.77",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|+01.95|+00.87|+03.77"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|+02.81|+00.99|+00.68",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+02.81|+00.99|+00.68"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "CounterTop|+02.81|+00.99|+00.68",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+02.81|+00.99|+00.68"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|+02.42|+00.00|+03.93",
+                        "Apple|+01.95|+00.87|+03.77",
+                        "CounterTop|+02.81|+00.99|+00.68"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

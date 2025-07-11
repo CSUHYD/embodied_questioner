@@ -1,0 +1,68 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the Pot",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan25/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Sink|-01.84|+00.73|+00.34|SinkBasin",
+                    "objectType": "SinkBasin",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-01.84|+00.73|+00.34|SinkBasin",
+                        "Apple|-01.53|+00.75|+00.30"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|-01.53|+00.75|+00.30",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|-01.53|+00.75|+00.30"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "StoveBurner|-00.52|+00.82|+02.08",
+                    "objectType": "StoveBurner",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "StoveBurner|-00.52|+00.82|+02.08",
+                        "Pot|-00.53|+00.82|+02.10"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Pot|-00.53|+00.82|+02.10",
+                    "objectType": "Pot",
+                    "baseaction": "put",
+                    "reward": 1,
+                    "relatedObject": [
+                        "StoveBurner|-00.52|+00.82|+02.08",
+                        "Pot|-00.53|+00.82|+02.10"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-01.84|+00.73|+00.34|SinkBasin",
+                        "Apple|-01.53|+00.75|+00.30",
+                        "StoveBurner|-00.52|+00.82|+02.08",
+                        "Pot|-00.53|+00.82|+02.10"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

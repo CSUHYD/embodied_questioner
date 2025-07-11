@@ -1,0 +1,68 @@
+[
+    [
+        {
+            "taskname": "put the Book in the Box",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan213/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|+12.31|+00.00|-01.15",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|+12.31|+00.00|-01.15",
+                        "Book|+12.04|+00.59|-01.15"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Book|+12.04|+00.59|-01.15",
+                    "objectType": "Book",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Book|+12.04|+00.59|-01.15"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CoffeeTable|+10.82|-00.01|+00.93",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|+10.82|-00.01|+00.93",
+                        "Box|+10.35|+00.83|+01.02"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Box|+10.35|+00.83|+01.02",
+                    "objectType": "Box",
+                    "baseaction": "put",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|+10.82|-00.01|+00.93",
+                        "Box|+10.35|+00.83|+01.02"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|+12.31|+00.00|-01.15",
+                        "Book|+12.04|+00.59|-01.15",
+                        "CoffeeTable|+10.82|-00.01|+00.93",
+                        "Box|+10.35|+00.83|+01.02"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

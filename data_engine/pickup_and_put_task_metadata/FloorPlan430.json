@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Candle in the SideTable",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan430/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|+00.20|+00.43|-02.01",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+00.20|+00.43|-02.01",
+                        "Candle|-00.59|+00.95|-02.25"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Candle|-00.59|+00.95|-02.25",
+                    "objectType": "Candle",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Candle|-00.59|+00.95|-02.25"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|-02.85|+00.01|+01.51",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-02.85|+00.01|+01.51"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "SideTable|-02.85|+00.01|+01.51",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-02.85|+00.01|+01.51"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+00.20|+00.43|-02.01",
+                        "Candle|-00.59|+00.95|-02.25",
+                        "SideTable|-02.85|+00.01|+01.51"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

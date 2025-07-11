@@ -1,0 +1,71 @@
+[
+    [
+        {
+            "taskname": "put the Candle in the CounterTop",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan413/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Dresser|+00.20|+00.00|+03.83",
+                    "objectType": "Dresser",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|+00.20|+00.00|+03.83",
+                        "Candle|+00.48|+01.15|+03.89"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Candle|+00.48|+01.15|+03.89",
+                    "objectType": "Candle",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Candle|+00.48|+01.15|+03.89"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Sink|-01.83|+00.69|+03.47|SinkBasin",
+                    "objectType": "Sink",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-01.83|+00.69|+02.78|SinkBasin",
+                        "Sink|-01.83|+00.69|+03.47|SinkBasin",
+                        "CounterTop|-01.80|+00.75|+03.12"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "CounterTop|-01.80|+00.75|+03.12",
+                    "objectType": "CounterTop",
+                    "baseaction": "put",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-01.83|+00.69|+02.78|SinkBasin",
+                        "Sink|-01.83|+00.69|+03.47|SinkBasin",
+                        "CounterTop|-01.80|+00.75|+03.12"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|+00.20|+00.00|+03.83",
+                        "Candle|+00.48|+01.15|+03.89",
+                        "Sink|-01.83|+00.69|+02.78|SinkBasin",
+                        "Sink|-01.83|+00.69|+03.47|SinkBasin",
+                        "CounterTop|-01.80|+00.75|+03.12"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

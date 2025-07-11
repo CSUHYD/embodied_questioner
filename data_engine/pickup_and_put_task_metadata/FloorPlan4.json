@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the Sink",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan4/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-02.28|+01.16|+00.38",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-02.28|+01.16|+00.38",
+                        "Apple|-02.48|+01.18|+00.48"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|-02.48|+01.18|+00.48",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|-02.48|+01.18|+00.48"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Sink|-01.39|+00.98|+00.44",
+                    "objectType": "Sink",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-01.39|+00.98|+00.44"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Sink|-01.39|+00.98|+00.44",
+                    "objectType": "Sink",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-01.39|+00.98|+00.44"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-02.28|+01.16|+00.38",
+                        "Apple|-02.48|+01.18|+00.48",
+                        "Sink|-01.39|+00.98|+00.44"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

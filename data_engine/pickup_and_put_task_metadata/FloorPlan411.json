@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the HandTowel in the HandTowelHolder",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan411/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "",
+                        "HandTowel|-03.33|+01.52|-02.16"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "HandTowel|-03.33|+01.52|-02.16",
+                    "objectType": "HandTowel",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "HandTowel|-03.33|+01.52|-02.16"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "HandTowelHolder|-03.33|+01.62|-02.20",
+                    "objectType": "HandTowelHolder",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "HandTowelHolder|-03.33|+01.62|-02.20"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "HandTowelHolder|-03.33|+01.62|-02.20",
+                    "objectType": "HandTowelHolder",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "HandTowelHolder|-03.33|+01.62|-02.20"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "",
+                        "HandTowel|-03.33|+01.52|-02.16",
+                        "HandTowelHolder|-03.33|+01.62|-02.20"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

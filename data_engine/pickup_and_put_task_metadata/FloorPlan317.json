@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the AlarmClock in the Box",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bedrooms/FloorPlan317/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|+02.24|00.00|+01.33",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|+02.24|00.00|+01.33",
+                        "AlarmClock|+02.19|+00.56|+01.23"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "AlarmClock|+02.19|+00.56|+01.23",
+                    "objectType": "AlarmClock",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "AlarmClock|+02.19|+00.56|+01.23"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Box|-01.75|+00.22|+01.50",
+                    "objectType": "Box",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-01.75|+00.22|+01.50"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Box|-01.75|+00.22|+01.50",
+                    "objectType": "Box",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-01.75|+00.22|+01.50"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|+02.24|00.00|+01.33",
+                        "AlarmClock|+02.19|+00.56|+01.23",
+                        "Box|-01.75|+00.22|+01.50"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

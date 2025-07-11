@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the CellPhone in the Box",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan219/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Dresser|-04.04|00.00|+04.59",
+                    "objectType": "Dresser",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-04.04|00.00|+04.59",
+                        "CellPhone|-04.93|+01.11|+04.42"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "CellPhone|-04.93|+01.11|+04.42",
+                    "objectType": "CellPhone",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CellPhone|-04.93|+01.11|+04.42"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Box|-02.31|+00.72|+00.35",
+                    "objectType": "Box",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-02.31|+00.72|+00.35"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Box|-02.31|+00.72|+00.35",
+                    "objectType": "Box",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-02.31|+00.72|+00.35"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-04.04|00.00|+04.59",
+                        "CellPhone|-04.93|+01.11|+04.42",
+                        "Box|-02.31|+00.72|+00.35"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

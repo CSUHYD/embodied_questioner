@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Cloth in the GarbageCan",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan421/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-00.35|+00.01|+01.45",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.35|+00.01|+01.45",
+                        "Cloth|-00.20|+00.80|+02.34"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Cloth|-00.20|+00.80|+02.34",
+                    "objectType": "Cloth",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Cloth|-00.20|+00.80|+02.34"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "GarbageCan|-02.04|00.00|+03.72",
+                    "objectType": "GarbageCan",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "GarbageCan|-02.04|00.00|+03.72"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "GarbageCan|-02.04|00.00|+03.72",
+                    "objectType": "GarbageCan",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "GarbageCan|-02.04|00.00|+03.72"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.35|+00.01|+01.45",
+                        "Cloth|-00.20|+00.80|+02.34",
+                        "GarbageCan|-02.04|00.00|+03.72"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

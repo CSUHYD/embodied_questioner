@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the AlarmClock in the Desk",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bedrooms/FloorPlan321/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|+00.28|+00.00|+01.30",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|+00.28|+00.00|+01.30",
+                        "AlarmClock|+00.30|+00.70|+01.10"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "AlarmClock|+00.30|+00.70|+01.10",
+                    "objectType": "AlarmClock",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "AlarmClock|+00.30|+00.70|+01.10"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Desk|+03.24|+00.00|-01.59",
+                    "objectType": "Desk",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Desk|+03.24|+00.00|-01.59"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Desk|+03.24|+00.00|-01.59",
+                    "objectType": "Desk",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Desk|+03.24|+00.00|-01.59"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|+00.28|+00.00|+01.30",
+                        "AlarmClock|+00.30|+00.70|+01.10",
+                        "Desk|+03.24|+00.00|-01.59"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

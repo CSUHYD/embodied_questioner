@@ -1,0 +1,67 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the Bowl",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan6/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-00.36|+00.95|+01.09",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.36|+00.95|+01.09",
+                        "Apple|-00.48|+00.97|+00.41"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|-00.48|+00.97|+00.41",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|-00.48|+00.97|+00.41"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-00.36|+00.95|+01.09",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.36|+00.95|+01.09",
+                        "Bowl|-00.65|+00.90|+01.26"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Bowl|-00.65|+00.90|+01.26",
+                    "objectType": "Bowl",
+                    "baseaction": "put",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.36|+00.95|+01.09",
+                        "Bowl|-00.65|+00.90|+01.26"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.36|+00.95|+01.09",
+                        "Apple|-00.48|+00.97|+00.41",
+                        "Bowl|-00.65|+00.90|+01.26"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

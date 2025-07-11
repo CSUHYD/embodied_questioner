@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Bowl in the CounterTop",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan27/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "DiningTable|-00.15|00.00|+01.07",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-00.15|00.00|+01.07",
+                        "Bowl|-00.03|+00.76|+01.36"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Bowl|-00.03|+00.76|+01.36",
+                    "objectType": "Bowl",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bowl|-00.03|+00.76|+01.36"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|+02.06|+00.97|+00.58",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+02.06|+00.97|+00.58"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "CounterTop|+02.06|+00.97|+00.58",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+02.06|+00.97|+00.58"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-00.15|00.00|+01.07",
+                        "Bowl|-00.03|+00.76|+01.36",
+                        "CounterTop|+02.06|+00.97|+00.58"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

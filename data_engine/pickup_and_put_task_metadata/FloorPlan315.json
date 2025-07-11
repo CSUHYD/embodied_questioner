@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the AlarmClock in the CoffeeTable",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bedrooms/FloorPlan315/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Dresser|-03.65|+00.01|-03.66",
+                    "objectType": "Dresser",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-03.65|+00.01|-03.66",
+                        "AlarmClock|-03.70|+00.98|-03.09"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "AlarmClock|-03.70|+00.98|-03.09",
+                    "objectType": "AlarmClock",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "AlarmClock|-03.70|+00.98|-03.09"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CoffeeTable|-00.50|+00.01|-03.99",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-00.50|+00.01|-03.99"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "CoffeeTable|-00.50|+00.01|-03.99",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-00.50|+00.01|-03.99"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-03.65|+00.01|-03.66",
+                        "AlarmClock|-03.70|+00.98|-03.09",
+                        "CoffeeTable|-00.50|+00.01|-03.99"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

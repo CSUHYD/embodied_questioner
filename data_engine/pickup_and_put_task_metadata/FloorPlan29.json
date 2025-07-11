@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the GarbageCan",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan29/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Sink|+00.93|+00.94|+00.32",
+                    "objectType": "SinkBasin",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|+00.93|+00.94|+00.32",
+                        "Apple|+00.90|+01.08|+00.29"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|+00.90|+01.08|+00.29",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|+00.90|+01.08|+00.29"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "GarbageCan|+01.86|-00.02|+02.39",
+                    "objectType": "GarbageCan",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "GarbageCan|+01.86|-00.02|+02.39"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "GarbageCan|+01.86|-00.02|+02.39",
+                    "objectType": "GarbageCan",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "GarbageCan|+01.86|-00.02|+02.39"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|+00.93|+00.94|+00.32",
+                        "Apple|+00.90|+01.08|+00.29",
+                        "GarbageCan|+01.86|-00.02|+02.39"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

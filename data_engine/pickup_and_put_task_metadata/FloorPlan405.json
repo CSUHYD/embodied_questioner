@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Cloth in the SinkBasin",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan405/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Bathtub|-00.60|+00.29|+00.83|BathtubBasin",
+                    "objectType": "Bathtub",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bathtub|-00.60|+00.29|+00.83|BathtubBasin",
+                        "Cloth|-00.49|+00.02|+01.31"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Cloth|-00.49|+00.02|+01.31",
+                    "objectType": "Cloth",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Cloth|-00.49|+00.02|+01.31"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Sink|-03.02|+00.87|+00.21|SinkBasin",
+                    "objectType": "SinkBasin",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-03.02|+00.87|+00.21|SinkBasin"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Sink|-03.02|+00.87|+00.21|SinkBasin",
+                    "objectType": "SinkBasin",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-03.02|+00.87|+00.21|SinkBasin"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bathtub|-00.60|+00.29|+00.83|BathtubBasin",
+                        "Cloth|-00.49|+00.02|+01.31",
+                        "Sink|-03.02|+00.87|+00.21|SinkBasin"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

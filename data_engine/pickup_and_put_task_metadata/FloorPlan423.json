@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Candle in the Bathtub",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan423/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-02.54|+00.81|+00.28",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-02.54|+00.81|+00.28",
+                        "Candle|-02.91|+00.81|+00.14"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Candle|-02.91|+00.81|+00.14",
+                    "objectType": "Candle",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Candle|-02.91|+00.81|+00.14"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Bathtub|-03.59|+00.11|+01.52",
+                    "objectType": "Bathtub",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bathtub|-03.59|+00.11|+01.52"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Bathtub|-03.59|+00.11|+01.52",
+                    "objectType": "Bathtub",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bathtub|-03.59|+00.11|+01.52"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-02.54|+00.81|+00.28",
+                        "Candle|-02.91|+00.81|+00.14",
+                        "Bathtub|-03.59|+00.11|+01.52"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

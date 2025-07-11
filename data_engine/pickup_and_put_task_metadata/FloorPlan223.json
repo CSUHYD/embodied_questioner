@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Box in the ArmChair",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan223/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Floor|+00.00|+00.00|+00.00",
+                    "objectType": "Floor",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "Box|+01.27|+00.15|-00.29"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Box|+01.27|+00.15|-00.29",
+                    "objectType": "Box",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|+01.27|+00.15|-00.29"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "ArmChair|-00.44|+00.01|+01.92",
+                    "objectType": "ArmChair",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "ArmChair|-00.44|+00.01|+01.92"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "ArmChair|-00.44|+00.01|+01.92",
+                    "objectType": "ArmChair",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "ArmChair|-00.44|+00.01|+01.92"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "Box|+01.27|+00.15|-00.29",
+                        "ArmChair|-00.44|+00.01|+01.92"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Box in the Sofa",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan226/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Floor|+00.00|+00.00|+00.00",
+                    "objectType": "Floor",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "Box|+01.72|+00.20|+00.44"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Box|+01.72|+00.20|+00.44",
+                    "objectType": "Box",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|+01.72|+00.20|+00.44"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Sofa|-00.50|+00.01|-01.89",
+                    "objectType": "Sofa",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sofa|-00.50|+00.01|-01.89"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Sofa|-00.50|+00.01|-01.89",
+                    "objectType": "Sofa",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sofa|-00.50|+00.01|-01.89"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "Box|+01.72|+00.20|+00.44",
+                        "Sofa|-00.50|+00.01|-01.89"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

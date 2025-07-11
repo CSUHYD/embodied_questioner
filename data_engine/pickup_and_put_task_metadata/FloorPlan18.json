@@ -1,0 +1,67 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the Pot",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan18/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|+01.39|+01.03|+00.90",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+01.39|+01.03|+00.90",
+                        "Apple|+01.38|+01.04|+03.33"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|+01.38|+01.04|+03.33",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|+01.38|+01.04|+03.33"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|+01.39|+01.03|+00.90",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+01.39|+01.03|+00.90",
+                        "Pot|+00.73|+00.98|+00.38"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Pot|+00.73|+00.98|+00.38",
+                    "objectType": "Pot",
+                    "baseaction": "put",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+01.39|+01.03|+00.90",
+                        "Pot|+00.73|+00.98|+00.38"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+01.39|+01.03|+00.90",
+                        "Apple|+01.38|+01.04|+03.33",
+                        "Pot|+00.73|+00.98|+00.38"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

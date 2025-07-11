@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Candle in the SideTable",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan419/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Bathtub|-00.98|-00.72|-02.93",
+                    "objectType": "Bathtub",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bathtub|-00.98|-00.72|-02.93",
+                        "Candle|-00.10|+00.47|-02.58"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Candle|-00.10|+00.47|-02.58",
+                    "objectType": "Candle",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Candle|-00.10|+00.47|-02.58"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|-02.18|00.00|-01.31",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-02.18|00.00|-01.31"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "SideTable|-02.18|00.00|-01.31",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-02.18|00.00|-01.31"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bathtub|-00.98|-00.72|-02.93",
+                        "Candle|-00.10|+00.47|-02.58",
+                        "SideTable|-02.18|00.00|-01.31"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

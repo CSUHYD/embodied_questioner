@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Book in the Sofa",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan202/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "TVStand|-01.57|+00.00|+03.87",
+                    "objectType": "TVStand",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "TVStand|-01.57|+00.00|+03.87",
+                        "Book|-01.94|+00.70|+03.61"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Book|-01.94|+00.70|+03.61",
+                    "objectType": "Book",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Book|-01.94|+00.70|+03.61"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Sofa|-01.14|00.00|+00.52",
+                    "objectType": "Sofa",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sofa|-01.14|00.00|+00.52"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Sofa|-01.14|00.00|+00.52",
+                    "objectType": "Sofa",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sofa|-01.14|00.00|+00.52"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "TVStand|-01.57|+00.00|+03.87",
+                        "Book|-01.94|+00.70|+03.61",
+                        "Sofa|-01.14|00.00|+00.52"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

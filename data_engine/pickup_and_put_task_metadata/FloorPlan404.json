@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Candle in the Bathtub",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan404/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Shelf|-01.17|+01.06|+02.16",
+                    "objectType": "Shelf",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|-01.17|+01.06|+02.16",
+                        "Candle|-00.61|+01.10|+02.15"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Candle|-00.61|+01.10|+02.15",
+                    "objectType": "Candle",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Candle|-00.61|+01.10|+02.15"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Bathtub|+00.22|+00.34|+00.64",
+                    "objectType": "Bathtub",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bathtub|+00.22|+00.34|+00.64"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Bathtub|+00.22|+00.34|+00.64",
+                    "objectType": "Bathtub",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bathtub|+00.22|+00.34|+00.64"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|-01.17|+01.06|+02.16",
+                        "Candle|-00.61|+01.10|+02.15",
+                        "Bathtub|+00.22|+00.34|+00.64"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

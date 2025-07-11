@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Box in the CoffeeTable",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan218/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Floor|-03.10|-00.08|+03.74",
+                    "objectType": "Floor",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|-03.10|-00.08|+03.74",
+                        "Box|-01.59|+00.50|+02.28"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Box|-01.59|+00.50|+02.28",
+                    "objectType": "Box",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-01.59|+00.50|+02.28"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CoffeeTable|-01.55|+00.00|+02.53",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-01.55|+00.00|+02.53"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "CoffeeTable|-01.55|+00.00|+02.53",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-01.55|+00.00|+02.53"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|-03.10|-00.08|+03.74",
+                        "Box|-01.59|+00.50|+02.28",
+                        "CoffeeTable|-01.55|+00.00|+02.53"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

@@ -1,0 +1,68 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the Pan",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan24/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "DiningTable|-00.92|00.00|+01.20",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-00.92|00.00|+01.20",
+                        "Apple|-00.74|+00.77|+00.99"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|-00.74|+00.77|+00.99",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|-00.74|+00.77|+00.99"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-02.08|+00.86|+03.80",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-02.08|+00.86|+03.80",
+                        "Pan|-02.67|+00.81|+03.74"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Pan|-02.67|+00.81|+03.74",
+                    "objectType": "Pan",
+                    "baseaction": "put",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-02.08|+00.86|+03.80",
+                        "Pan|-02.67|+00.81|+03.74"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-00.92|00.00|+01.20",
+                        "Apple|-00.74|+00.77|+00.99",
+                        "CounterTop|-02.08|+00.86|+03.80",
+                        "Pan|-02.67|+00.81|+03.74"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

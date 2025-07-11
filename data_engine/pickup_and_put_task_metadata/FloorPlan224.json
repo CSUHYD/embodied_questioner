@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Book in the ArmChair",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan224/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Dresser|-00.05|+00.03|+01.67",
+                    "objectType": "Dresser",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-00.05|+00.03|+01.67",
+                        "Book|+00.12|+00.92|+01.11"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Book|+00.12|+00.92|+01.11",
+                    "objectType": "Book",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Book|+00.12|+00.92|+01.11"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "ArmChair|-02.86|+00.03|-02.04",
+                    "objectType": "ArmChair",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "ArmChair|-02.86|+00.03|-02.04"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "ArmChair|-02.86|+00.03|-02.04",
+                    "objectType": "ArmChair",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "ArmChair|-02.86|+00.03|-02.04"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Dresser|-00.05|+00.03|+01.67",
+                        "Book|+00.12|+00.92|+01.11",
+                        "ArmChair|-02.86|+00.03|-02.04"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

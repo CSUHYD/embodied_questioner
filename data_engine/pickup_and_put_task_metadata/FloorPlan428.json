@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the HandTowel in the HandTowelHolder",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan428/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-01.76|+00.67|+03.16",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-01.76|+00.67|+03.16",
+                        "HandTowel|-01.67|+01.50|+03.96"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "HandTowel|-01.67|+01.50|+03.96",
+                    "objectType": "HandTowel",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "HandTowel|-01.67|+01.50|+03.96"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "HandTowelHolder|-01.67|+01.60|+04.00",
+                    "objectType": "HandTowelHolder",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "HandTowelHolder|-01.67|+01.60|+04.00"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "HandTowelHolder|-01.67|+01.60|+04.00",
+                    "objectType": "HandTowelHolder",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "HandTowelHolder|-01.67|+01.60|+04.00"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-01.76|+00.67|+03.16",
+                        "HandTowel|-01.67|+01.50|+03.96",
+                        "HandTowelHolder|-01.67|+01.60|+04.00"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

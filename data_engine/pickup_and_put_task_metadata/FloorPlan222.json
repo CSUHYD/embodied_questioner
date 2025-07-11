@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Box in the TVStand",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan222/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|-00.68|+00.00|-01.60",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-00.68|+00.00|-01.60",
+                        "Box|-00.64|+00.78|-01.47"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Box|-00.64|+00.78|-01.47",
+                    "objectType": "Box",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-00.64|+00.78|-01.47"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "TVStand|+00.84|-00.01|+01.58",
+                    "objectType": "TVStand",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "TVStand|+00.84|-00.01|+01.58"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "TVStand|+00.84|-00.01|+01.58",
+                    "objectType": "TVStand",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "TVStand|+00.84|-00.01|+01.58"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-00.68|+00.00|-01.60",
+                        "Box|-00.64|+00.78|-01.47",
+                        "TVStand|+00.84|-00.01|+01.58"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

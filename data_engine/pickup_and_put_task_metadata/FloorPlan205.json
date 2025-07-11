@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Box in the DiningTable",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan205/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Floor|+00.00|+00.00|+00.00",
+                    "objectType": "Floor",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "Box|-01.61|+00.11|+06.85"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Box|-01.61|+00.11|+06.85",
+                    "objectType": "Box",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-01.61|+00.11|+06.85"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "DiningTable|-01.59|+00.01|+01.27",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-01.59|+00.01|+01.27"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "DiningTable|-01.59|+00.01|+01.27",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-01.59|+00.01|+01.27"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "Box|-01.61|+00.11|+06.85",
+                        "DiningTable|-01.59|+00.01|+01.27"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

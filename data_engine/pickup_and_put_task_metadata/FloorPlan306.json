@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the AlarmClock in the Desk",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bedrooms/FloorPlan306/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Shelf|+00.76|+00.93|-01.91",
+                    "objectType": "Shelf",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|+00.76|+00.93|-01.91",
+                        "AlarmClock|+01.30|+00.94|-01.89"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "AlarmClock|+01.30|+00.94|-01.89",
+                    "objectType": "AlarmClock",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "AlarmClock|+01.30|+00.94|-01.89"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Desk|-00.50|+00.01|-01.47",
+                    "objectType": "Desk",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Desk|-00.50|+00.01|-01.47"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Desk|-00.50|+00.01|-01.47",
+                    "objectType": "Desk",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Desk|-00.50|+00.01|-01.47"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|+00.76|+00.93|-01.91",
+                        "AlarmClock|+01.30|+00.94|-01.89",
+                        "Desk|-00.50|+00.01|-01.47"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

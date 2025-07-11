@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the BasketBall in the Bed",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bedrooms/FloorPlan319/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "Floor|+00.00|+00.00|+00.00",
+                    "objectType": "Floor",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "BasketBall|-01.23|+00.12|-00.18"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "BasketBall|-01.23|+00.12|-00.18",
+                    "objectType": "BasketBall",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "BasketBall|-01.23|+00.12|-00.18"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Bed|-00.21|00.00|+00.98",
+                    "objectType": "Bed",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bed|-00.21|00.00|+00.98"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Bed|-00.21|00.00|+00.98",
+                    "objectType": "Bed",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bed|-00.21|00.00|+00.98"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Floor|+00.00|+00.00|+00.00",
+                        "BasketBall|-01.23|+00.12|-00.18",
+                        "Bed|-00.21|00.00|+00.98"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

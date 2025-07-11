@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the AlarmClock in the Shelf",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bedrooms/FloorPlan327/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|-01.44|00.00|-02.05",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-01.44|00.00|-02.05",
+                        "AlarmClock|-01.48|+00.67|-01.58"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "AlarmClock|-01.48|+00.67|-01.58",
+                    "objectType": "AlarmClock",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "AlarmClock|-01.48|+00.67|-01.58"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Shelf|+01.26|+00.38|-00.26",
+                    "objectType": "Shelf",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|+01.26|+00.38|-00.26"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Shelf|+01.26|+00.38|-00.26",
+                    "objectType": "Shelf",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|+01.26|+00.38|-00.26"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-01.44|00.00|-02.05",
+                        "AlarmClock|-01.48|+00.67|-01.58",
+                        "Shelf|+01.26|+00.38|-00.26"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

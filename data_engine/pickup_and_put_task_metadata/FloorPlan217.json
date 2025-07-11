@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Box in the ArmChair",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan217/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CoffeeTable|-02.41|00.00|+02.55",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-02.41|00.00|+02.55",
+                        "Box|-02.18|+00.67|+02.43"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Box|-02.18|+00.67|+02.43",
+                    "objectType": "Box",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-02.18|+00.67|+02.43"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "ArmChair|-00.30|+00.00|+01.71",
+                    "objectType": "ArmChair",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "ArmChair|-00.30|+00.00|+01.71"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "ArmChair|-00.30|+00.00|+01.71",
+                    "objectType": "ArmChair",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "ArmChair|-00.30|+00.00|+01.71"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-02.41|00.00|+02.55",
+                        "Box|-02.18|+00.67|+02.43",
+                        "ArmChair|-00.30|+00.00|+01.71"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

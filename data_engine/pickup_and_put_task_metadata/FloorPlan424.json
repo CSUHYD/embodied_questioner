@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Cloth in the SinkBasin",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/bathrooms/FloorPlan424/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-00.26|+00.93|+02.84",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.26|+00.93|+02.84",
+                        "Cloth|-00.35|+00.95|+02.07"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Cloth|-00.35|+00.95|+02.07",
+                    "objectType": "Cloth",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Cloth|-00.35|+00.95|+02.07"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Sink|-00.30|+00.80|+03.26|SinkBasin",
+                    "objectType": "SinkBasin",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-00.30|+00.80|+03.26|SinkBasin"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Sink|-00.30|+00.80|+03.26|SinkBasin",
+                    "objectType": "SinkBasin",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|-00.30|+00.80|+03.26|SinkBasin"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.26|+00.93|+02.84",
+                        "Cloth|-00.35|+00.95|+02.07",
+                        "Sink|-00.30|+00.80|+03.26|SinkBasin"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

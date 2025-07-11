@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Box in the SideTable",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan228/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CoffeeTable|-04.00|-00.01|+02.45",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-04.00|-00.01|+02.45",
+                        "Box|-04.01|+00.58|+02.71"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Box|-04.01|+00.58|+02.71",
+                    "objectType": "Box",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-04.01|+00.58|+02.71"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|-03.79|+00.01|+04.46",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-03.79|+00.01|+04.46"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "SideTable|-03.79|+00.01|+04.46",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-03.79|+00.01|+04.46"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-04.00|-00.01|+02.45",
+                        "Box|-04.01|+00.58|+02.71",
+                        "SideTable|-03.79|+00.01|+04.46"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

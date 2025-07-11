@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the GarbageCan",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan21/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "DiningTable|-01.93|-00.04|-01.40",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-01.93|-00.04|-01.40",
+                        "Apple|-01.90|+00.87|-01.40"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|-01.90|+00.87|-01.40",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|-01.90|+00.87|-01.40"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "GarbageCan|-01.26|-00.03|-03.61",
+                    "objectType": "GarbageCan",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "GarbageCan|-01.26|-00.03|-03.61"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "GarbageCan|-01.26|-00.03|-03.61",
+                    "objectType": "GarbageCan",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "GarbageCan|-01.26|-00.03|-03.61"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-01.93|-00.04|-01.40",
+                        "Apple|-01.90|+00.87|-01.40",
+                        "GarbageCan|-01.26|-00.03|-03.61"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

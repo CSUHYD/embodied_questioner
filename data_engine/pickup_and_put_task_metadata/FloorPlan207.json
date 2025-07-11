@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Box in the Shelf",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan207/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CoffeeTable|-00.15|+00.00|+00.42",
+                    "objectType": "CoffeeTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-00.15|+00.00|+00.42",
+                        "Box|-00.01|+00.65|+00.89"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Box|-00.01|+00.65|+00.89",
+                    "objectType": "Box",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Box|-00.01|+00.65|+00.89"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Shelf|-01.77|+01.45|-01.59",
+                    "objectType": "Shelf",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|-01.77|+01.45|-01.59"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Shelf|-01.77|+01.45|-01.59",
+                    "objectType": "Shelf",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Shelf|-01.77|+01.45|-01.59"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CoffeeTable|-00.15|+00.00|+00.42",
+                        "Box|-00.01|+00.65|+00.89",
+                        "Shelf|-01.77|+01.45|-01.59"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

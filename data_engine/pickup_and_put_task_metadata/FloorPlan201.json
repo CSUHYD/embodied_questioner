@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Book in the SideTable",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/living_rooms/FloorPlan201/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "DiningTable|-02.27|-00.02|+01.42",
+                    "objectType": "DiningTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-02.27|-00.02|+01.42",
+                        "Book|-01.87|+00.68|+01.17"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Book|-01.87|+00.68|+01.17",
+                    "objectType": "Book",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Book|-01.87|+00.68|+01.17"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "SideTable|-00.25|+00.00|+03.37",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-00.25|+00.00|+03.37"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "SideTable|-00.25|+00.00|+03.37",
+                    "objectType": "SideTable",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "SideTable|-00.25|+00.00|+03.37"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "DiningTable|-02.27|-00.02|+01.42",
+                        "Book|-01.87|+00.68|+01.17",
+                        "SideTable|-00.25|+00.00|+03.37"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Bowl in the SinkBasin",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan2/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|-00.02|+00.96|+00.51",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.02|+00.96|+00.51",
+                        "Bowl|+00.28|+00.92|+01.09"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Bowl|+00.28|+00.92|+01.09",
+                    "objectType": "Bowl",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Bowl|+00.28|+00.92|+01.09"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "Sink|+00.00|+00.89|-01.44|SinkBasin",
+                    "objectType": "SinkBasin",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|+00.00|+00.89|-01.44|SinkBasin"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "Sink|+00.00|+00.89|-01.44|SinkBasin",
+                    "objectType": "SinkBasin",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Sink|+00.00|+00.89|-01.44|SinkBasin"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|-00.02|+00.96|+00.51",
+                        "Bowl|+00.28|+00.92|+01.09",
+                        "Sink|+00.00|+00.89|-01.44|SinkBasin"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]

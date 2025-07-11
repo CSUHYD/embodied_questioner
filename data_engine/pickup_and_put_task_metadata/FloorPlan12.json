@@ -1,0 +1,65 @@
+[
+    [
+        {
+            "taskname": "put the Apple in the GarbageCan",
+            "tasktype": "pickup_and_put",
+            "metadatapath": "taskgenerate/kitchens/FloorPlan12/metadata.json",
+            "actions": [
+                {
+                    "action": "navigate to",
+                    "objectId": "CounterTop|+01.51|+00.97|+02.31",
+                    "objectType": "CounterTop",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+01.51|+00.97|+02.31",
+                        "Apple|+01.41|+00.98|+02.13"
+                    ]
+                },
+                {
+                    "action": "pickup",
+                    "objectId": "Apple|+01.41|+00.98|+02.13",
+                    "objectType": "Apple",
+                    "baseaction": "pickup",
+                    "reward": 1,
+                    "relatedObject": [
+                        "Apple|+01.41|+00.98|+02.13"
+                    ]
+                },
+                {
+                    "action": "navigate to",
+                    "objectId": "GarbageCan|+01.45|-00.03|+02.91",
+                    "objectType": "GarbageCan",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "GarbageCan|+01.45|-00.03|+02.91"
+                    ]
+                },
+                {
+                    "action": "put",
+                    "objectId": "GarbageCan|+01.45|-00.03|+02.91",
+                    "objectType": "GarbageCan",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "GarbageCan|+01.45|-00.03|+02.91"
+                    ]
+                },
+                {
+                    "action": "end",
+                    "objectId": "",
+                    "objectType": "",
+                    "baseaction": "",
+                    "reward": 1,
+                    "relatedObject": [
+                        "CounterTop|+01.51|+00.97|+02.31",
+                        "Apple|+01.41|+00.98|+02.13",
+                        "GarbageCan|+01.45|-00.03|+02.91"
+                    ]
+                }
+            ],
+            "totalreward": 5
+        }
+    ]
+]
