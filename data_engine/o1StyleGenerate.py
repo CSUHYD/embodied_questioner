@@ -6,7 +6,8 @@ import time
 import threading
 import copy
 from PIL import Image
-
+import sys
+import os
 # from vlmCall import 
 from vlmCall_ollama import VLMAPI
 from utils import save_data_to_json,save_image,clear_folder,load_json,get_volume_distance_rate
@@ -126,6 +127,7 @@ class O1StyleGenerate:
         Avoid mentioning the number of objects.
         Ensure the description is in the first person and remains concise, within 100 words.
         Follow the format: <Observation> ...... </Observation>
+        
         """
         llmapi=VLMAPI(self.model)
         selfobservation=llmapi.vlm_request(systext,usertext,image_path)
@@ -315,7 +317,9 @@ class O1StyleGenerate:
         Note: The objects to be found are placed on the surfaces of other objects.
         Ensure the description is in the first person, concise, and within 100 words.
         Ensure a smooth connection between the <Observation> and <Planning>sections.
-        Output must follow the format: <Planning>...</Planning>
+        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
+        Output must follow the format: <Planning>...</Planning>, <Question>...</Question>
         """
         #### Thinking-Planning
         usertext2=f"""To complete the task, you first observed the scene in the image: {selfobservation}, and based on your observation, you have determined the possible search order: {posible_list}.
@@ -324,9 +328,11 @@ class O1StyleGenerate:
         In the <Planning> section, you need to briefly describe your plan based on the order of {posible_list}.
         Note: The <Thinking> and <Planning> should focus on the selection of search locations, not the methods or details of the search.
         Note: The objects to be found are placed on the surfaces of other objects.
+        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         Ensure the description is in the first person, concise, and within 200 words.
-        Ensure a smooth connection between the <Observation>, <Thinking>, and <Planning> sections.
-        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning>
+        Ensure a smooth connection between the <Observation>, <Thinking>, <Planning> and <Question> sections.
+        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning>, <Question>...</Question>
         """
 
         if think_plan_num==1:usertext=usertext1 

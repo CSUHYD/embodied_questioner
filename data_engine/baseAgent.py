@@ -1,5 +1,5 @@
-from .eventObject import EventObject
-from .baseAction import BaseAction
+from eventObject import EventObject
+from baseAction import BaseAction
 import math
 import time
 from PIL import Image

@@ -136,6 +136,42 @@ To evaluate the generalization of our reasoning model, we design a real-world ex
 <p>
 
 ## QuickStart 🎯🎯
+
+### Interactive Observer
+
+我们提供了一个交互式的第三人称观察器，支持键盘和鼠标控制：
+
+#### 安装依赖
+```shell
+# 安装基本依赖
+pip install opencv-python numpy
+
+# 安装鼠标控制依赖（可选）
+pip install pyautogui
+
+# 或者运行自动安装脚本
+python install_requirements.py
+```
+
+#### 运行观察器
+```shell
+python third_person_observer.py
+```
+
+#### 控制说明
+- **键盘控制**：
+  - WASD：移动控制（前进/左转/后退/右转）
+  - 8246：视角控制（上/下/左/右）
+  - M：切换鼠标控制模式
+  - I：采集所有物品图片
+  - Q：退出
+
+- **鼠标控制**：
+  - 按M键开启/关闭鼠标控制
+  - 开启后鼠标光标会隐藏
+  - 移动鼠标控制视角（左右移动控制水平视角，上下移动控制垂直视角）
+  - 再次按M键关闭鼠标控制，光标会重新显示
+
 ### Training
 
 #### Step 1. Install Requirements

@@ -1,5 +1,5 @@
 import math
-from .baseAgent import BaseAgent
+from baseAgent import BaseAgent
 from tqdm import tqdm
 
 class RocAgent(BaseAgent):
