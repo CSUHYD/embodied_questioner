@@ -197,9 +197,7 @@ class InputHandler:
     
     def __init__(self, agent: RocAgent, observer=None):
         self.agent = agent
-        self.gathering_images = False
         self.observer = observer  # 用于访问当前捕获物体id
-        self.gather_thread = None # 新增：保存图片采集线程引用
         self._setup_key_mapping()
     
     def _setup_key_mapping(self) -> None:
@@ -210,7 +208,7 @@ class InputHandler:
             ord('d'): lambda: self.agent.action.action_mapping["move_right"](self.agent.controller, 0.15),
             ord('s'): lambda: self.agent.action.action_mapping["move_back"](self.agent.controller, 0.15),
             ord('q'): "quit",
-            ord('i'): "get_all_item_image",
+            ord('i'): "take_screenshot",
             # 视角控制
             ord('8'): lambda: self.agent.action.action_mapping["look_up"](self.agent.controller, 2),
             ord('2'): lambda: self.agent.action.action_mapping["look_down"](self.agent.controller, 2),
@@ -233,8 +231,8 @@ class InputHandler:
         
         if action == "quit":
             return False
-        elif action == "get_all_item_image":
-            self._handle_image_gathering()
+        elif action == "take_screenshot":
+            self._handle_screenshot()
         elif action == "move_object":
             if self.observer:
                 self.observer.move_object_at_cursor()
@@ -255,25 +253,38 @@ class InputHandler:
             
         return True
     
-    def _handle_image_gathering(self) -> None:
-        """处理图片采集"""
-        if not self.gathering_images:
-            self.gather_thread = threading.Thread(target=self._gather_images_thread)
-            self.gather_thread.start()
+    def _handle_screenshot(self) -> None:
+        """处理截图"""
+        import os
+        from datetime import datetime
+        
+        # 创建screenshots目录
+        screenshots_dir = "screenshots"
+        if not os.path.exists(screenshots_dir):
+            os.makedirs(screenshots_dir)
+        
+        # 生成时间戳文件名
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"screenshot_{timestamp}.png"
+        filepath = os.path.join(screenshots_dir, filename)
+        
+        # 获取当前画面并保存
+        frame = self.agent.controller.last_event.frame
+        if hasattr(frame, 'copy') and isinstance(frame, np.ndarray):
+            frame_bgr = frame[:, :, ::-1].copy()
         else:
-            print("采集正在进行中，请稍候……")
-    
-    def _gather_images_thread(self) -> None:
-        """图片采集线程"""
-        self.gathering_images = True
-        print("正在采集所有物品图片，请稍候……")
-        self.agent.get_all_item_image()
-        print("采集完成！")
-        self.gathering_images = False
+            frame_np = np.array(frame)
+            if frame_np.shape[-1] == 3:
+                frame_bgr = frame_np[:, :, ::-1].copy()
+            else:
+                frame_bgr = frame_np.copy()
+        
+        cv2.imwrite(filepath, frame_bgr)
+        print(f"截图已保存: {filepath}")
     
     def display_status(self) -> None:
         """显示控制状态"""
-        print(f"\r控制键: WASD移动 | 8246视角控制 | M移动物体 | F开关物体 | E拾取 | R释放 | P放入容器 | I采集图片 | Q退出", 
+        print(f"\r控制键: WASD移动 | 8246视角控制 | M移动物体 | F开关物体 | E拾取 | R释放 | P放入容器 | I截图 | Q退出", 
               end="", flush=True)
 
 
@@ -341,7 +352,7 @@ class ThirdPersonObserver:
         print("- E: 拾取光标下的物体")
         print("- R: 释放手持物体到地上")
         print("- P: 将手持物体放入光标下的容器中")
-        print("- I: 采集所有物品图片")
+        print("- I: 截图")
         print("- Q: 退出")
         print()
         
@@ -368,9 +379,6 @@ class ThirdPersonObserver:
     
     def cleanup(self) -> None:
         """清理资源"""
-        # 等待图片采集线程结束
-        if self.input_handler.gather_thread is not None:
-            self.input_handler.gather_thread.join(timeout=5)
         cv2.destroyAllWindows()
         self.controller.stop()
         print("仿真结束，资源已释放。")

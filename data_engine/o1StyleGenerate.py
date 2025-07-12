@@ -315,11 +315,11 @@ class O1StyleGenerate:
         In the <Planning> section, you need to supplement your thought process by combining the image and the task and briefly describe your plan based on the order of {posible_list}.
         Note: The <Planning> should focus on the selection of search locations, not the methods or details of the search.
         Note: The objects to be found are placed on the surfaces of other objects.
-        Ensure the description is in the first person, concise, and within 100 words.
-        Ensure a smooth connection between the <Observation> and <Planning>sections.
         During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
         you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         Output must follow the format: <Planning>...</Planning>, <Question>...</Question>
+        Ensure the description is in the first person, concise, and within 100 words.
+        Ensure a smooth connection between the <Observation>, <Planning> and <Question> sections.
         """
         #### Thinking-Planning
         usertext2=f"""To complete the task, you first observed the scene in the image: {selfobservation}, and based on your observation, you have determined the possible search order: {posible_list}.
@@ -330,9 +330,9 @@ class O1StyleGenerate:
         Note: The objects to be found are placed on the surfaces of other objects.
         During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
         you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
+        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning>, <Question>...</Question>
         Ensure the description is in the first person, concise, and within 200 words.
         Ensure a smooth connection between the <Observation>, <Thinking>, <Planning> and <Question> sections.
-        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning>, <Question>...</Question>
         """
 
         if think_plan_num==1:usertext=usertext1 
@@ -386,8 +386,10 @@ class O1StyleGenerate:
         Attention: Do not include any references to feedback or the pending search list {self.plan_objects_list} in your output. These elements are merely potential hints and should not be explicitly mentioned or referenced in your analysis. Your reasoning and plans must be based solely on observations and logical inference, ensuring that the outcomes naturally align with the feedback and pending search list.
         Note: The objects to be found are placed on the surfaces of other objects, and the <Planning> should focus on the selection of search locations, not the methods or details of the search. 
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
+        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         The output should be limited to 150 words.
-        Output must follow the format: <Planning>...</Planning>""" 
+        Output must follow the format: <Planning>...</Planning>, <Question>...</Question>""" 
         
         usertext2=f"""The current task has been carried out for {self.round-1} rounds. Below is the history of your thinking, reflection, and decision-making in previous rounds: {self.generate_o1style_data["trajectory"]}.
         After completing the last action, you gained a new perspective, and the feedback is: {feedback}.
@@ -397,8 +399,10 @@ class O1StyleGenerate:
         Attention: Do not include any references to feedback or the pending search list {self.plan_objects_list} in your output. These elements are merely potential hints and should not be explicitly mentioned or referenced in your analysis. Your reasoning and plans must be based solely on observations and logical inference, ensuring that the outcomes naturally align with the feedback and pending search list.
         Note: The objects to be found are placed on the surfaces of other objects, and the <Thinking> and <Planning> should focus on the selection of search locations, not the methods or details of the search. 
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
+        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         The output should be limited to 200 words.
-        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning>"""    
+        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning> and <Question>...</Question>"""    
         llmapi=VLMAPI(self.model)
         if num==1:usertext=usertext1
         else: usertext=usertext2
@@ -465,8 +469,10 @@ class O1StyleGenerate:
             Note: feedback is a hint and must not be referenced in your response. However, ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
             Note: do not include descriptions like 'based on feedback' in the output.
             The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
+            During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+            you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
             The output should be limited to 100 words.
-            The output format must be: <Thinking>...</Thinking>"""    
+            The output format must be: <Thinking>...</Thinking>, <Question>...</Question>"""    
             llmapi=VLMAPI(self.model)
             image_path=f"{self.origin_path}/{self.round-1}_{last_targetobjId}.png"
             thinking_verify=llmapi.vlm_request(systext,usertext,image_path)
@@ -481,8 +487,10 @@ class O1StyleGenerate:
             In the <Verification> section, analyze the current perspective, describe your thought process for re-observing.        
             Note: feedback is a hint and must not be referenced in your response. However, ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
             Note: do not include descriptions like 'based on feedback' in the output.
+            During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+            you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
             The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds. The output should be limited to 100 words.
-            The output format must be: <Verification>...</Verification>"""    
+            The output format must be: <Verification>...</Verification>, <Question>...</Question>"""    
             llmapi=VLMAPI(self.model)
             image_path=f"{self.origin_path}/{self.round-1}_{last_targetobjId}.png"
             thinking_verify=llmapi.vlm_request(systext,usertext,image_path)
@@ -511,8 +519,10 @@ class O1StyleGenerate:
             Note: feedback is a hint and must not be referenced in your response. However, ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
             Note: do not include descriptions like 'based on feedback' in the output.
             The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
+            During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+            you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
             The output should be limited to 100 words.
-            The output format must be: <Thinking>...</Thinking>"""    
+            The output format must be: <Thinking>...</Thinking>, <Question>...</Question>"""  
             llmapi=VLMAPI(self.model)
             image_path=f"{self.origin_path}/{self.round-1}_{last_targetobjId}.png"
             thinking_verify=llmapi.vlm_request(systext,usertext,image_path)
@@ -566,8 +576,10 @@ class O1StyleGenerate:
             Note: The feedback here serves as a potential hint and should not be explicitly treated as known information in your analysis. However, 
             ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
             The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
+            During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+            you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
             The output should be limited to 100 words.
-            The output format must be: <Thinking>...</Thinking>"""    
+            The output format must be: <Thinking>...</Thinking>, <Question>...</Question>"""    
             llmapi=VLMAPI(self.model)
             image_path=f"{self.origin_path}/{self.round-1}_{last_targetobjId}.png"
             thinking_verify=llmapi.vlm_request(systext,usertext,image_path)
@@ -586,7 +598,7 @@ class O1StyleGenerate:
         在每一轮轨迹生成中，结合历史轨迹、最新环境反馈和当前计划，自动生成“反思-计划”内容，并推理出下一步要执行的动作，同时将大模型生成的反思/计划文本和决策动作加入轨迹。
         输入：上一步目标物体ID、环境反馈、图片路径
         处理：构造prompt → 大模型推理 → 结果入轨迹 → 决策动作入轨迹
-        输出：下一步要执行的动作（如“navigate to Plate”）
+        输出：下一步要执行的动作（如"navigate to Plate"）
         """
         
         print("********* start generate reflection",self.round,"********")
@@ -610,7 +622,10 @@ class O1StyleGenerate:
         Note: The objects to be found are placed on the surfaces of other objects, and the <Reflection> should focus on the selection of search locations, not the methods or details of the search.
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
         The output should be limited to 150 words.
-        Output must follow the format: <Reflection>...</Reflection>""" 
+        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
+        The output should be limited to 100 words.
+        Output must follow the format: <Reflection>...</Reflection>, <Question>...</Question>""" 
         
         usertext2=f"""The current task has been carried out for {self.round-1} rounds. Below is the history of your thinking, reflection, and decision-making in previous rounds: {self.generate_o1style_data["trajectory"]}.
         After completing the last action, you gained a new perspective. The feedback is: {feedback}, the pending search list is: {self.plan_objects_list}.
@@ -620,8 +635,10 @@ class O1StyleGenerate:
         Attention: Do not include any references to feedback or the pending search list {self.plan_objects_list} in your output. These elements are merely potential hints and should not be explicitly mentioned or referenced in your analysis. Your reasoning and plans must be based solely on observations and logical inference, ensuring that the outcomes naturally align with the feedback and pending search list.        
         Note: The objects to be found are placed on the surfaces of other objects, and the <Reflection> and <Planning> should focus on the selection of search locations, not the methods or details of the search.
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
+        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         The output should be limited to 200 words.
-        Output must follow the format: <Reflection>...</Reflection>, <Planning>...</Planning>"""    
+        Output must follow the format: <Reflection>...</Reflection>, <Planning>...</Planning> and <Question>...</Question>"""    
         llmapi=VLMAPI(self.model)
         if num==1:usertext=usertext1
         else: usertext=usertext2
@@ -678,8 +695,10 @@ class O1StyleGenerate:
         Note: feedback is a hint and must not be referenced in your response. However, ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
         Note: The objects to be found are placed on the surfaces of other objects, and the <Reflection> and <Planning> should focus on the selection of search locations, not the methods or details of the search.
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
+        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
+        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         The output should be limited to 100 words.
-        Output must follow the format: <Reflection>...</Reflection>, <Planning>...</Planning>"""    
+        Output must follow the format: <Reflection>...</Reflection>, <Planning>...</Planning> and <Question>...</Question>"""    
         llmapi=VLMAPI(self.model)
         if num==1:usertext=usertext1
         else: usertext=usertext2
@@ -2265,7 +2284,7 @@ if __name__=="__main__":
 
                             
                             o1stylegenerate.generate_o1style_data["task_metadata"]=task
-
+                            
                             o1stylegenerate.generate_o1style_data["scene"]=scene
                             o1stylegenerate.generate_o1style_data["tasktype"]=tasktype 
                             o1stylegenerate.generate_o1style_data["instruction_idx"]=instruction_idx
@@ -2297,8 +2316,3 @@ if __name__=="__main__":
                                 save_data_to_json(error_paths,"./wrong_generte_path_list.json")
                                 continue
             
-            
-
-
-
-

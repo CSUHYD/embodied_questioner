@@ -1,0 +1,14 @@
+{
+    "observation": {
+        "systext": "You are a mobile robot located in a room. Your task is to describe the visible objects in front of you, based on the current view.",
+        "usertext": "Please observe the image, briefly describe the main visible objects in the room and their spatial relationships.\nNote: Only describe objects from the provided categories, do not include others.\nAvoid mentioning the number of objects.\nEnsure the description is in the first person and remains concise, within 100 words.\nFollow the format: <Observation> ...... </Observation>"
+    },
+    "thinking": {
+        "systext": "You are a mobile robot located in a room. Your task is to think about the current situation and plan your next action.",
+        "usertext": "Based on your observation and the current task, think about what you should do next.\nFollow the format: <Thinking> ...... </Thinking>"
+    },
+    "planning": {
+        "systext": "You are a mobile robot located in a room. Your task is to create a plan for your next actions.",
+        "usertext": "Based on your thinking, create a plan for your next actions.\nFollow the format: <Planning> ...... </Planning>"
+    }
+}
