@@ -1,7 +1,7 @@
 [
     [
         {
-            "taskname": "put the Apple in the Plate",
+            "taskname": "put the Tomato in the Plate",
             "tasktype": "pickup_and_put",
             "metadatapath": "taskgenerate/kitchens/FloorPlan3/metadata.json",
             "actions": [

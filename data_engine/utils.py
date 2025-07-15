@@ -32,7 +32,8 @@ def get_volume_distance_rate(metadata):
                 rate = 0 
             rate=v/d
             isnavigable=False
-            if obj["visible"]==True:
+            # if obj["visible"]==True:
+            if True:
                 if v<0.01:
                     isnavigable=False
                     if s>0.5 and d<10:

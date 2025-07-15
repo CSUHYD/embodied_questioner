@@ -1,18 +1,30 @@
 {
     "observation": {
         "systext": "You are a mobile robot located in a room. Your task is to describe the visible objects in front of you, based on the current view.",
-        "usertext": "Please observe the image, briefly describe the main visible objects in the room and their spatial relationships.\nNote: Only describe objects from the provided categories, do not include others.\nAvoid mentioning the number of objects.\nEnsure the description is in the first person and remains concise, within 100 words.\nFollow the format: <Observation> ...... </Observation>"
+        "usertext": "Please observe the image, briefly describe the main visible objects in the room and their spatial relationships. Only include objects from the following categories: {navigable_categories}. Note: Only describe objects from the provided categories, do not include others. Avoid mentioning the number of objects. Ensure the description is in the first person and remains concise, within 100 words. Follow the format: <Observation> ...... </Observation>"
     },
-    "task_planning": {
-        "systext": "You are a mobile robot task planner. Your job is to break down complex tasks into sequential subtasks based on the task description and environment observation.",
-        "usertext": "Task: {taskname}\nEnvironment Description: {environment_description}\n\nPlease analyze the task and break it down into sequential subtasks. Each subtask should be a specific action that can be executed by a robot.\n\nConsider the following action types:\n- navigate to [object]: Move to a specific object\n- pickup [object]: Pick up an object\n- put [object] in [container]: Place an object in a container\n- open [container]: Open a container\n- close [container]: Close a container\n- toggle [object]: Toggle a switch\n- end: Complete the task\n\nOutput format:\n<Subtask1> [action] [target_object]</Subtask1>\n<Subtask2> [action] [target_object]</Subtask2>\n...\n<SubtaskN> end</SubtaskN>"
+    "high_level_task_planning": {
+        "systext": "You are a mobile robot task planner. Your job is to break down a high-level task into several major subgoals or stages, focusing on the overall strategy rather than specific actions.",
+        "usertext": "You are given the following context for planning:\nYour current task is: {taskname}\nThe environment is described as: {environment_description}\n\nPlease break down this high-level task into several major subgoals or stages. Do not specify concrete robot actions at this stage. Output format:\n<Subgoal1>...</Subgoal1>\n<Subgoal2>...</Subgoal2>\n..."
     },
-    "thinking": {
-        "systext": "You are a mobile robot located in a room. Your task is to think about the current situation and plan your next action.",
-        "usertext": "Based on your observation and the current task, think about what you should do next.\nFollow the format: <Thinking> ...... </Thinking>"
+    "executable_task_planning": {
+        "systext": "You are a mobile robot task planner. Your job is to break down a high-level subgoal into specific executable actions that can be performed by the robot.",
+        "usertext": "Given the subgoal: {subgoal}, and the following context, break it down into a sequence of executable actions. Each action must be chosen from the following supported types: navigate, open, close, break_, cook, slice_, toggle_on, toggle_off, dirty, clean, fill, empty, use_up, pick_up, put.\nOutput format:\n<Subtask1> [action] [target_object]</Subtask1>\n<Subtask2> [action] [target_object]</Subtask2>\n..."
     },
-    "planning": {
-        "systext": "You are a mobile robot located in a room. Your task is to create a plan for your next actions.",
-        "usertext": "Based on your thinking, create a plan for your next actions.\nFollow the format: <Planning> ...... </Planning>"
+    "question_judge": {
+        "systext": "You are a robot assistant. Your job is to decide whether you need to ask the user a question before proceeding with the task.",
+        "usertext": "You are currently working on the following task: {taskname}.\n\nBased on your latest observation, you see: {observation}\n\nYour current plan is as follows:\n{planning}\n\nFrom your recent memory, you recall:\n{memory_text}\n\nThe objects you can interact with include: {navigable_str}.\n\nIf you have encountered any errors, here is the message:\n{error_message}\n\nGiven all the above, do you need to ask the user a question before proceeding? If so, what type of question is it (clarification/help/general), and what would you ask? Please answer in the following format:\nASK: [yes/no]\nTYPE: [clarification/help/general]\nQUESTION: [your question]"
+    },
+    "general_plan_question": {
+        "systext": "You are a robot assistant. Your job is to help clarify or optimize the initial plan for a high-level task.",
+        "usertext": "The current high-level task is: {taskname}.\nYour initial observation is: {observation}\nThe initial plan is as follows:\n{subgoals}\n\nBased on this observation and plan, what is a general question you would ask the user to help clarify or improve the plan before execution? Please answer in the format:\nQUESTION: [your question]"
+    },
+    "user_response_replan_judge": {
+        "systext": "You are a robot assistant. Your job is to decide whether the robot should replan its task based on the user's answer.",
+        "usertext": "You are currently assisting with the following task: {taskname}.\n\nYour current plan is:\n{plan}\nHere is a summary of your recent Q&A history with the user:\n{memory}\n\nThe user has just provided the following answer:\n{user_response}\n\nGiven all of the above, do you think you should replan your task before proceeding? Please answer in the following format:\nREPLAN: [yes/no]\nREASON: [your reason]"
+    },
+    "replan_by_user_response": {
+        "systext": "You are a mobile robot task planner. Your job is to replan the task based on the user's answer and the current context.",
+        "usertext": "You are currently working on the following task: {taskname}.\n\nYour latest observation is:\n{observation}\n\nHere is a summary of your recent Q&A history with the user:\n{memory_text}\n\nThe user has just provided the following answer:\n{user_response}\n\nThe objects you can interact with include: {navigable_str}.\n\nGiven all of the above, please provide a new plan in the following format:\n<Subgoal1>...</Subgoal1>\n<Subgoal2>...</Subgoal2>\n..."
     }
 }

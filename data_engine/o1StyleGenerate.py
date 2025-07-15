@@ -6,10 +6,8 @@ import time
 import threading
 import copy
 from PIL import Image
-import sys
-import os
-# from vlmCall import 
-from vlmCall_ollama import VLMAPI
+
+from vlmCall import VLMAPI
 from utils import save_data_to_json,save_image,clear_folder,load_json,get_volume_distance_rate
 
 from baseAction import BaseAction
@@ -27,7 +25,7 @@ class O1StyleGenerate:
                 metadata,
                 task,                               # task from TaskGenerate
                 round = 1,                          # current round
-                model = "qwen2.5vl:32b"
+                model = "gpt-4o-2024-11-20"
                  ):
 
         self.plan_objects_list=[]           
@@ -127,7 +125,6 @@ class O1StyleGenerate:
         Avoid mentioning the number of objects.
         Ensure the description is in the first person and remains concise, within 100 words.
         Follow the format: <Observation> ...... </Observation>
-        
         """
         llmapi=VLMAPI(self.model)
         selfobservation=llmapi.vlm_request(systext,usertext,image_path)
@@ -150,9 +147,6 @@ class O1StyleGenerate:
         return type_exists, id_exists
 
     def choose_r1_posible_object(self,random_number,categories):
-        """
-        根据当前任务和场景，结合大模型推理，自动筛选出若干（random_number个）最有可能与任务相关的目标物体类别，作为后续动作/计划的候选目标。
-        """
         if random_number==0:
             return []
         categories_t=categories
@@ -169,6 +163,7 @@ class O1StyleGenerate:
         for item in remove_list:
             if item in categories_t:
                 categories_t.remove(item) 
+        
         posible_list = set()  
         for objtype in categories_t: 
             # print(objtype)
@@ -190,30 +185,14 @@ class O1StyleGenerate:
             elif len(posible_list)<random_number:
                 random_number=len(posible_list)
                 
-        # systext = f"You are a mobile robot located in a room. Your task is {self.task['taskname']}. Based on the task requirements, the objects you need to find now are: {self.current_action['relatedObject'][-1].split('|')[0]}"
+        systext = f"You are a mobile robot located in a room. Your task is {self.task['taskname']}. Based on the task requirements, the objects you need to find now are: {self.current_action['relatedObject'][-1].split('|')[0]}"
 
-        # usertext = f"""Please select the most likely locations for {random_number} objects from the provided categories. These objects should be most relevant to the current task.
-        # Categories: {posible_list}
-        # Make sure to select only from the provided categories, and ensure no objects outside the categories appear in the output.
-        # Your response should be a list of {random_number} objects.
-        # Make sure the output is formatted as [...]"""
-        # print(systext,usertext)
-
-        systext = f"You are a mobile robot located in a room. Your task is: {self.task['taskname']}. Based on the task, the object(s) to find now is: {self.current_action['relatedObject'][-1].split('|')[0]}."
-
-        usertext = f"""
-        From the categories below, select the {random_number} most likely objects where the target item could be located.
-
+        usertext = f"""Please select the most likely locations for {random_number} objects from the provided categories. These objects should be most relevant to the current task.
         Categories: {posible_list}
-
-        IMPORTANT:
-        - ONLY return a Python-style list like this: ["Object1", "Object2", ...]
-        - Do NOT include any explanation, justification, or numbered list.
-        - Do NOT include any extra text.
-        - Your entire output must be a single line, valid list format.
-
-        Now output the list:
-        """
+        Make sure to select only from the provided categories, and ensure no objects outside the categories appear in the output.
+        Your response should be a list of {random_number} objects.
+        Make sure the output is formatted as [...]"""
+        # print(systext,usertext)
         llmapi=VLMAPI(self.model)
         posible_list=llmapi.vlm_request(systext,usertext)
         
@@ -228,7 +207,6 @@ class O1StyleGenerate:
        
     def choose_posible_object(self,categories):
         """
-        在给定的候选物体类别中，结合历史轨迹和空间距离，自动筛选出距离当前目标最近、且未被操作过的可用 receptacle 物体，作为下一个动作的目标。
         """
         categories_t=categories
         remove_list=[]
@@ -278,7 +256,6 @@ class O1StyleGenerate:
     def generate_r1_plan_thinking(self,selfobservation,current_image_path,think_plan_num,plan_num,correct_num):
         """
         r1 round plan/thinking+plan
-        在轨迹生成的第一轮（r1 round），结合当前观察、图片和任务，自动生成“思考-计划”内容，并推理出本轮要依次搜索/操作的目标物体类别列表（posible_list），同时将大模型生成的思考/计划文本加入轨迹。
         """
         print("\n****** begin generate r1 plan, plan object num:",plan_num,"******")
         current_action=self.current_action  
@@ -315,11 +292,9 @@ class O1StyleGenerate:
         In the <Planning> section, you need to supplement your thought process by combining the image and the task and briefly describe your plan based on the order of {posible_list}.
         Note: The <Planning> should focus on the selection of search locations, not the methods or details of the search.
         Note: The objects to be found are placed on the surfaces of other objects.
-        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
-        Output must follow the format: <Planning>...</Planning>, <Question>...</Question>
         Ensure the description is in the first person, concise, and within 100 words.
-        Ensure a smooth connection between the <Observation>, <Planning> and <Question> sections.
+        Ensure a smooth connection between the <Observation> and <Planning>sections.
+        Output must follow the format: <Planning>...</Planning>
         """
         #### Thinking-Planning
         usertext2=f"""To complete the task, you first observed the scene in the image: {selfobservation}, and based on your observation, you have determined the possible search order: {posible_list}.
@@ -328,11 +303,9 @@ class O1StyleGenerate:
         In the <Planning> section, you need to briefly describe your plan based on the order of {posible_list}.
         Note: The <Thinking> and <Planning> should focus on the selection of search locations, not the methods or details of the search.
         Note: The objects to be found are placed on the surfaces of other objects.
-        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
-        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning>, <Question>...</Question>
         Ensure the description is in the first person, concise, and within 200 words.
-        Ensure a smooth connection between the <Observation>, <Thinking>, <Planning> and <Question> sections.
+        Ensure a smooth connection between the <Observation>, <Thinking>, and <Planning> sections.
+        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning>
         """
 
         if think_plan_num==1:usertext=usertext1 
@@ -343,7 +316,6 @@ class O1StyleGenerate:
         if think_plan_num==1:
             self.generate_o1style_data["trajectory"].append(r1_plan)
         else:             
-            # TODO:需要检查正则表达式
             thinking_matches = re.findall(r'<Thinking>(.*?)</Thinking>', r1_plan,re.DOTALL)
             planning_matches = re.findall(r'<Planning>(.*?)</Planning>', r1_plan,re.DOTALL)
             thinking_str = thinking_matches[0] if thinking_matches else ''
@@ -361,10 +333,6 @@ class O1StyleGenerate:
            
      
     def generate_thinking(self,last_targetobjId,feedback):
-        """
-        在每一轮轨迹生成中，结合历史轨迹、最新环境反馈和当前计划，自动生成“思考-计划”内容，并推理出下一步要执行的动作，同时将大模型生成的思考/计划文本和决策动作加入轨迹。
-        """
-
         print("********* start generate thinking",self.round,"********")        
         print("************ current plan object list:",self.plan_objects_list)
         
@@ -386,10 +354,8 @@ class O1StyleGenerate:
         Attention: Do not include any references to feedback or the pending search list {self.plan_objects_list} in your output. These elements are merely potential hints and should not be explicitly mentioned or referenced in your analysis. Your reasoning and plans must be based solely on observations and logical inference, ensuring that the outcomes naturally align with the feedback and pending search list.
         Note: The objects to be found are placed on the surfaces of other objects, and the <Planning> should focus on the selection of search locations, not the methods or details of the search. 
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
-        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         The output should be limited to 150 words.
-        Output must follow the format: <Planning>...</Planning>, <Question>...</Question>""" 
+        Output must follow the format: <Planning>...</Planning>""" 
         
         usertext2=f"""The current task has been carried out for {self.round-1} rounds. Below is the history of your thinking, reflection, and decision-making in previous rounds: {self.generate_o1style_data["trajectory"]}.
         After completing the last action, you gained a new perspective, and the feedback is: {feedback}.
@@ -399,10 +365,8 @@ class O1StyleGenerate:
         Attention: Do not include any references to feedback or the pending search list {self.plan_objects_list} in your output. These elements are merely potential hints and should not be explicitly mentioned or referenced in your analysis. Your reasoning and plans must be based solely on observations and logical inference, ensuring that the outcomes naturally align with the feedback and pending search list.
         Note: The objects to be found are placed on the surfaces of other objects, and the <Thinking> and <Planning> should focus on the selection of search locations, not the methods or details of the search. 
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
-        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         The output should be limited to 200 words.
-        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning> and <Question>...</Question>"""    
+        Output must follow the format: <Thinking>...</Thinking>, <Planning>...</Planning>"""    
         llmapi=VLMAPI(self.model)
         if num==1:usertext=usertext1
         else: usertext=usertext2
@@ -439,7 +403,6 @@ class O1StyleGenerate:
     def generate_thinking_verify(self,last_targetobjId,feedback):
         """
         最后一次thinking/thinking+verify
-        在任务执行的最后阶段，结合历史轨迹、最新环境反馈和当前计划，自动生成“思考-验证”内容，判断任务是否完成或是否需要进一步观察/行动，并将大模型生成的思考/验证文本和决策动作加入轨迹。
         """
         print("*************** start verification *****************")
         current_action=self.current_action  
@@ -469,10 +432,8 @@ class O1StyleGenerate:
             Note: feedback is a hint and must not be referenced in your response. However, ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
             Note: do not include descriptions like 'based on feedback' in the output.
             The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
-            During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-            you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
             The output should be limited to 100 words.
-            The output format must be: <Thinking>...</Thinking>, <Question>...</Question>"""    
+            The output format must be: <Thinking>...</Thinking>"""    
             llmapi=VLMAPI(self.model)
             image_path=f"{self.origin_path}/{self.round-1}_{last_targetobjId}.png"
             thinking_verify=llmapi.vlm_request(systext,usertext,image_path)
@@ -487,10 +448,8 @@ class O1StyleGenerate:
             In the <Verification> section, analyze the current perspective, describe your thought process for re-observing.        
             Note: feedback is a hint and must not be referenced in your response. However, ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
             Note: do not include descriptions like 'based on feedback' in the output.
-            During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-            you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
             The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds. The output should be limited to 100 words.
-            The output format must be: <Verification>...</Verification>, <Question>...</Question>"""    
+            The output format must be: <Verification>...</Verification>"""    
             llmapi=VLMAPI(self.model)
             image_path=f"{self.origin_path}/{self.round-1}_{last_targetobjId}.png"
             thinking_verify=llmapi.vlm_request(systext,usertext,image_path)
@@ -519,10 +478,8 @@ class O1StyleGenerate:
             Note: feedback is a hint and must not be referenced in your response. However, ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
             Note: do not include descriptions like 'based on feedback' in the output.
             The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
-            During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-            you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
             The output should be limited to 100 words.
-            The output format must be: <Thinking>...</Thinking>, <Question>...</Question>"""  
+            The output format must be: <Thinking>...</Thinking>"""    
             llmapi=VLMAPI(self.model)
             image_path=f"{self.origin_path}/{self.round-1}_{last_targetobjId}.png"
             thinking_verify=llmapi.vlm_request(systext,usertext,image_path)
@@ -576,10 +533,8 @@ class O1StyleGenerate:
             Note: The feedback here serves as a potential hint and should not be explicitly treated as known information in your analysis. However, 
             ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
             The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
-            During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-            you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
             The output should be limited to 100 words.
-            The output format must be: <Thinking>...</Thinking>, <Question>...</Question>"""    
+            The output format must be: <Thinking>...</Thinking>"""    
             llmapi=VLMAPI(self.model)
             image_path=f"{self.origin_path}/{self.round-1}_{last_targetobjId}.png"
             thinking_verify=llmapi.vlm_request(systext,usertext,image_path)
@@ -594,13 +549,6 @@ class O1StyleGenerate:
         return thinking_verify
 
     def generate_reflection(self,last_targetobjId,feedback,image_path_1="",image_path_2="",image_path_3=""):
-        """
-        在每一轮轨迹生成中，结合历史轨迹、最新环境反馈和当前计划，自动生成“反思-计划”内容，并推理出下一步要执行的动作，同时将大模型生成的反思/计划文本和决策动作加入轨迹。
-        输入：上一步目标物体ID、环境反馈、图片路径
-        处理：构造prompt → 大模型推理 → 结果入轨迹 → 决策动作入轨迹
-        输出：下一步要执行的动作（如"navigate to Plate"）
-        """
-        
         print("********* start generate reflection",self.round,"********")
         
         if self.current_action["action"]=="navigate to":
@@ -622,10 +570,7 @@ class O1StyleGenerate:
         Note: The objects to be found are placed on the surfaces of other objects, and the <Reflection> should focus on the selection of search locations, not the methods or details of the search.
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
         The output should be limited to 150 words.
-        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
-        The output should be limited to 100 words.
-        Output must follow the format: <Reflection>...</Reflection>, <Question>...</Question>""" 
+        Output must follow the format: <Reflection>...</Reflection>""" 
         
         usertext2=f"""The current task has been carried out for {self.round-1} rounds. Below is the history of your thinking, reflection, and decision-making in previous rounds: {self.generate_o1style_data["trajectory"]}.
         After completing the last action, you gained a new perspective. The feedback is: {feedback}, the pending search list is: {self.plan_objects_list}.
@@ -635,10 +580,8 @@ class O1StyleGenerate:
         Attention: Do not include any references to feedback or the pending search list {self.plan_objects_list} in your output. These elements are merely potential hints and should not be explicitly mentioned or referenced in your analysis. Your reasoning and plans must be based solely on observations and logical inference, ensuring that the outcomes naturally align with the feedback and pending search list.        
         Note: The objects to be found are placed on the surfaces of other objects, and the <Reflection> and <Planning> should focus on the selection of search locations, not the methods or details of the search.
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
-        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         The output should be limited to 200 words.
-        Output must follow the format: <Reflection>...</Reflection>, <Planning>...</Planning> and <Question>...</Question>"""    
+        Output must follow the format: <Reflection>...</Reflection>, <Planning>...</Planning>"""    
         llmapi=VLMAPI(self.model)
         if num==1:usertext=usertext1
         else: usertext=usertext2
@@ -695,10 +638,8 @@ class O1StyleGenerate:
         Note: feedback is a hint and must not be referenced in your response. However, ensure your description aligns with the feedback's outcome while reasoning through observations and plans.
         Note: The objects to be found are placed on the surfaces of other objects, and the <Reflection> and <Planning> should focus on the selection of search locations, not the methods or details of the search.
         The output should use the first-person perspective, be concise and fluent, and smoothly connect with the previous rounds.
-        During the task execution, if you encounter issues such as ambiguous task instructions, uncertainties, or multiple failed attempts to find the object, 
-        you should ask the user for clarification. When asking questions, please place your question within the <Question> tag.
         The output should be limited to 100 words.
-        Output must follow the format: <Reflection>...</Reflection>, <Planning>...</Planning> and <Question>...</Question>"""    
+        Output must follow the format: <Reflection>...</Reflection>, <Planning>...</Planning>"""    
         llmapi=VLMAPI(self.model)
         if num==1:usertext=usertext1
         else: usertext=usertext2
@@ -780,9 +721,6 @@ class O1StyleGenerate:
     
     
     def excute(self,decision_making):
-        """
-        根据大模型推理得到的决策动作（decision_making），自动执行相应的环境交互（如导航、拾取），并同步更新轨迹、图片、历史操作等信息。
-        """
         target_objectId=""
         image_path_1=""
         image_path_2=""
@@ -1026,9 +964,6 @@ class O1StyleGenerate:
     
     
     def target_objectType_navigate(self,target_objectType):
-        """
-        根据目标物体类型，自动导航到该物体，并根据物体的状态（如是否可打开）自动生成合理的交互、反馈和轨迹更新。
-        """
         current_action=self.current_action  
         current_objectType=current_action["objectType"]
         current_objectId=current_action["objectId"]
@@ -1042,7 +977,7 @@ class O1StyleGenerate:
 
             self.save_metadata_navigable_list()
             self.round+=1
-            
+              
         if target_objectType!=current_objectType:   
             target_objectId = next((item["objectId"] for item in self.navigable_list if item["objectType"] == target_objectType), None)           
             target_object = next((item for item in self.metadata["objects"] if item["objectId"]==target_objectId), None)
@@ -1099,10 +1034,7 @@ class O1StyleGenerate:
         return
     
     def generate_one_o1style_data(self,plan_num,correct_num):
-        """ 
-        根据一条任务指令，自动生成一条完整的“感知-思考-计划-动作-反馈”具身智能轨迹（O1风格），
-        并将所有过程（文本、图片、动作等）组织成结构化数据，便于训练和评测。
-        """
+
         self.metadata=self.controller.last_event.metadata
         event=self.controller.last_event
         
@@ -1113,12 +1045,10 @@ class O1StyleGenerate:
         #### r1-observation
         init_image_path=f"{self.origin_path}/{self.round-1}_init_observe.png"
         save_image(event, init_image_path)   
-        # 根据机器人当前看到的图像，生成一句“自我观察描述”
         selfobservation=self.generate_selfObs(init_image_path)
 
         #### r1-plan-thinking
         think_plan_num=random.choice([1,2]) 
-        # 根据“自我观察描述”和“初始图像”，生成一条“计划-思考”轨迹
         posible_list=self.generate_r1_plan_thinking(selfobservation,init_image_path,think_plan_num,plan_num,correct_num)
         r1_decision_making=f"<DecisionMaking>navigate to {posible_list[0]}</DecisionMaking>"
         self.generate_o1style_data["trajectory"].append(r1_decision_making)
@@ -1175,7 +1105,7 @@ class O1StyleGenerate:
                     
                     print("last_reward:",last_reward,"new_reward:",self.reward)
                     if success==True:
-                        break
+                        break  
                     
                 else:    
                     decision_making=self.generate_observe(last_targetobjId)
@@ -1509,9 +1439,6 @@ class O1StyleGenerate:
                 
     
     def round_reward(self,objectId,decisionmaking):
-        """
-        根据当前任务类型、奖励状态、目标物体ID和决策动作，自动计算本轮奖励、更新任务状态、生成反馈信息，并推进到下一步动作。
-        """
         success=False
         feedback=""
         if self.task['tasktype']=="single_search":
@@ -2177,7 +2104,7 @@ def run_initial_scene(timeout, scene_diagonal, origin_pos_path, retry_limit=3):
 
 if __name__=="__main__":
     env="taskgenerate"
-    model = "qwen2.5vl:32b" # use gpt-4o to generate trajectories
+    model = "gpt-4o-2024-11-20" # use gpt-4o to generate trajectories
     # you can set timeout for AI2THOR init here.
     timeout=40           
     
@@ -2213,8 +2140,7 @@ if __name__=="__main__":
                "single_search_from_closerep",               
                "single_pickup_from_closerep"                
                ]
-    # tasktype="single_search"
-    tasktype="pickup_and_put"
+    tasktype="single_search"
     
     
     room_type = ['kitchens','living_rooms','bedrooms','bathrooms']
@@ -2239,9 +2165,9 @@ if __name__=="__main__":
             for scene in floorplans:   
                 if scene in ['FloorPlan8']:
                     continue
-                metadata_path=f"data_engine/{env}/{room}/{scene}/metadata.json"
+                metadata_path=f"{env}/{room}/{scene}/metadata.json"
                 print("metadata_path:",metadata_path)
-                generate_task=f"data_engine/{tasktype}_task_metadata/{scene}.json"
+                generate_task=f"{tasktype}_task_metadata/{scene}.json"
                 print("task_metadata_path:",generate_task)
                 
                 metadata=load_json(metadata_path)
@@ -2265,7 +2191,7 @@ if __name__=="__main__":
                     
                     scene_size= metadata["sceneBounds"]["size"]
                     scene_diagonal = math.sqrt(scene_size["x"]**2 + scene_size["z"]**2)
-                    origin_pos_path=f"data_engine/{env}/{room}/{scene}/originPos.json" 
+                    origin_pos_path=f"{env}/{room}/{scene}/originPos.json" 
                     max_retries=2
                     error_paths = []  
                     for attempt in range(max_retries + 1): 
@@ -2284,7 +2210,7 @@ if __name__=="__main__":
 
                             
                             o1stylegenerate.generate_o1style_data["task_metadata"]=task
-                            
+
                             o1stylegenerate.generate_o1style_data["scene"]=scene
                             o1stylegenerate.generate_o1style_data["tasktype"]=tasktype 
                             o1stylegenerate.generate_o1style_data["instruction_idx"]=instruction_idx
@@ -2316,3 +2242,7 @@ if __name__=="__main__":
                                 save_data_to_json(error_paths,"./wrong_generte_path_list.json")
                                 continue
             
+            
+
+
+

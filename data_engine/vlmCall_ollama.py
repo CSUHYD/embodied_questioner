@@ -7,6 +7,20 @@ from PIL import Image
 import io
 import time
 import os
+import json
+import requests
+
+def load_prompt_config(config_path="config/prompt_config.json"):
+    """加载 prompt 配置文件"""
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Warning: Config file {config_path} not found, using default config")
+        return {}
+
+# 默认配置
+PROMPT_CONFIG = load_prompt_config()
 
     
 class VLMRequestError(Exception):
@@ -160,7 +174,8 @@ if __name__ == "__main__":
     print("=" * 50)
     print("测试1: 纯文本请求")
     print("=" * 50)
-    systext = "You are a helpful assistant."
+    prompt_config = PROMPT_CONFIG.get("vlm_call", {}).get("general", {})
+    systext = prompt_config.get("systext", "You are a helpful assistant.")
     usertext = "Hello, can you introduce yourself?"
     
     response = llmapi.vlm_request(systext, usertext)
@@ -170,8 +185,9 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print("测试2: 单张图片请求")
     print("=" * 50)
-    systext = "You are a helpful assistant that can analyze images."
-    usertext = "请描述这张图片中你看到了什么？"
+    prompt_config = PROMPT_CONFIG.get("vlm_call", {}).get("image_analysis", {})
+    systext = prompt_config.get("systext", "You are a helpful assistant that can analyze images.")
+    usertext = prompt_config.get("usertext", "请描述这张图片中你看到了什么？")
     image_path1 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Apple_37512a22.png"
     
     response = llmapi.vlm_request(systext, usertext, image_path1=image_path1)
@@ -181,8 +197,9 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print("测试3: 两张图片请求")
     print("=" * 50)
-    systext = "You are a helpful assistant that can analyze multiple images."
-    usertext = "请比较这两张图片中的物体，它们有什么相同和不同之处？"
+    prompt_config = PROMPT_CONFIG.get("vlm_call", {}).get("multi_image_analysis", {})
+    systext = prompt_config.get("systext", "You are a helpful assistant that can analyze multiple images.")
+    usertext = prompt_config.get("usertext", "请比较这两张图片中的物体，它们有什么相同和不同之处？")
     image_path1 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Apple_37512a22.png"
     image_path2 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Bread_dca87251.png"
     
@@ -193,8 +210,9 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print("测试4: 三张图片请求")
     print("=" * 50)
-    systext = "You are a helpful assistant that can analyze multiple images."
-    usertext = "请分析这三张图片中的厨房用品，它们分别是什么？"
+    prompt_config = PROMPT_CONFIG.get("vlm_call", {}).get("three_image_analysis", {})
+    systext = prompt_config.get("systext", "You are a helpful assistant that can analyze multiple images.")
+    usertext = prompt_config.get("usertext", "请分析这三张图片中的厨房用品，它们分别是什么？")
     image_path1 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Apple_37512a22.png"
     image_path2 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Bread_dca87251.png"
     image_path3 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Bowl_2813285c.png"
