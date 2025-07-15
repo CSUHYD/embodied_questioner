@@ -15,6 +15,9 @@ from utils import save_data_to_json,save_image,clear_folder,load_json,get_volume
 from baseAction import BaseAction
 from RocAgent import RocAgent       
 import json
+import functools
+import logging
+
 
 def load_prompt_config(config_path="config/prompt_config.json"):
     """加载 prompt 配置文件"""
@@ -169,10 +172,12 @@ class SceneManager:
         return tasks[0] if tasks else []
 
 
+
 class TaskPlanner:
     def __init__(self, model, config=None):
         self.model = model
         self.config = config or PROMPT_CONFIG
+        self.subgoals = []  # 当前高层子目标
 
     def plan_high_level_subgoals(self, taskname, environment_description, memory_text=None):
         """
@@ -194,6 +199,7 @@ class TaskPlanner:
         subgoal_pattern = r'<Subgoal\d+>(.*?)</Subgoal\d+>'
         matches = re.findall(subgoal_pattern, result, re.DOTALL)
         subgoals = [m.strip() for m in matches]
+        self.subgoals = subgoals
         return subgoals
 
     def plan_executable_subtasks(self, subgoal, context=None):
@@ -222,50 +228,19 @@ class TaskPlanner:
             })
         return subtasks
 
-
-    def _parse_subtasks(self, planning_result):
-        import re
-        subtask_pattern = r'<Subtask(\d+)>\s*(.*?)\s*</Subtask\1>'
-        matches = re.findall(subtask_pattern, planning_result, re.DOTALL)
-        subtasks = []
-        for match in matches:
-            subtask_num, action_description = match
-            # 提取 [action] [object] 格式
-            action_type = ""
-            object_type = ""
-            action_obj_pattern = r'\[(.*?)\]\s*\[(.*?)\]'
-            m = re.search(action_obj_pattern, action_description)
-            if m:
-                action_type = m.group(1).strip()
-                object_type = m.group(2).strip()
-            else:
-                # 兼容只写了 action 或格式不标准的情况
-                action_type = action_description.strip()
-            subtasks.append({
-                "subtask_id": int(subtask_num),
-                "action": action_type,
-                "objectId": "",
-                "objectType": object_type
-            })
-        return subtasks
-
-    def replan_based_on_user_response(self, taskname, observation, user_response, memory_text=None, navigable_list=None):
+    def replan_based_on_user_response(self, taskname, observation, question, response, subgoal):
         """
-        根据用户回答生成新的plan（subgoals或subtasks）。
+        根据用户回答生成新的plan（subgoals）。
         """
         prompt_cfg = self.config.get("replan_by_user_response")
         systext = prompt_cfg["systext"]
         usertext = prompt_cfg["usertext"]
-        navigable_str = ""
-        if navigable_list:
-            types = list(set([item["objectType"] for item in navigable_list]))
-            navigable_str = ", ".join(types)
         usertext = usertext.format(
             taskname=taskname,
             observation=observation or "",
-            user_response=user_response or "",
-            memory_text=memory_text or "",
-            navigable_str=navigable_str
+            question=question or "",
+            response=response or "",
+            subgoal=subgoal or ""
         )
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
@@ -274,6 +249,7 @@ class TaskPlanner:
         subgoal_pattern = r'<Subgoal\d+>(.*?)</Subgoal\d+>'
         matches = re.findall(subgoal_pattern, result, re.DOTALL)
         subgoals = [m.strip() for m in matches]
+        self.subgoals = subgoals  # 更新成员变量
         return subgoals
 
 
@@ -293,6 +269,13 @@ class ObservationGenerator:
         llmapi = VLMAPI(self.model)
         observation = llmapi.vlm_request(systext, usertext, image_path)
         return observation
+
+    def save_initial_observation_image(self, controller, origin_path):
+        event = controller.last_event
+        init_image_path = f"{origin_path}/0_init_observe.png"
+        os.makedirs(os.path.dirname(init_image_path), exist_ok=True)
+        save_image(event, init_image_path)
+        return init_image_path
 
 class QuestionGenerator:
     def __init__(self, model, config=None):
@@ -315,35 +298,35 @@ class QuestionGenerator:
         question = m.group(1).strip() if m else result.strip()
         return question
 
-    def should_ask_question_vlm(self, taskname, observation=None, planning=None, memory_text=None, navigable_list=None, error_message=None):
-        """
-        由VLM判断是否需要提问，并返回(should_ask, type, question)
-        """
-        import re
-        prompt_cfg = self.config["question_judge"]
-        systext = prompt_cfg["systext"]
-        # 直接将变量显式输入
-        navigable_str = ""
-        if navigable_list:
-            types = list(set([item["objectType"] for item in navigable_list]))
-            navigable_str = ", ".join(types)
-        usertext = prompt_cfg["usertext"].format(
-            taskname=taskname,
-            observation=observation or "",
-            planning=planning or "",
-            memory_text=memory_text or "",
-            navigable_str=navigable_str,
-            error_message=error_message or ""
-        )
-        llmapi = VLMAPI(self.model)
-        result = llmapi.vlm_request(systext, usertext)
-        ask = re.search(r'ASK:\s*(yes|no)', result, re.IGNORECASE)
-        qtype = re.search(r'TYPE:\s*(clarification|help|general)', result, re.IGNORECASE)
-        question = re.search(r'QUESTION:\s*(.*)', result)
-        should_ask = ask and ask.group(1).strip().lower() == "yes"
-        question_type = qtype.group(1).strip().lower() if qtype else "general"
-        question_text = question.group(1).strip() if question else ""
-        return should_ask, question_type, question_text
+    # def should_ask_question_vlm(self, taskname, observation=None, planning=None, memory_text=None, navigable_list=None, error_message=None):
+    #     """
+    #     由VLM判断是否需要提问，并返回(should_ask, type, question)
+    #     """
+    #     import re
+    #     prompt_cfg = self.config["question_judge"]
+    #     systext = prompt_cfg["systext"]
+    #     # 直接将变量显式输入
+    #     navigable_str = ""
+    #     if navigable_list:
+    #         types = list(set([item["objectType"] for item in navigable_list]))
+    #         navigable_str = ", ".join(types)
+    #     usertext = prompt_cfg["usertext"].format(
+    #         taskname=taskname,
+    #         observation=observation or "",
+    #         planning=planning or "",
+    #         memory_text=memory_text or "",
+    #         navigable_str=navigable_str,
+    #         error_message=error_message or ""
+    #     )
+    #     llmapi = VLMAPI(self.model)
+    #     result = llmapi.vlm_request(systext, usertext)
+    #     ask = re.search(r'ASK:\s*(yes|no)', result, re.IGNORECASE)
+    #     qtype = re.search(r'TYPE:\s*(clarification|help|general)', result, re.IGNORECASE)
+    #     question = re.search(r'QUESTION:\s*(.*)', result)
+    #     should_ask = ask and ask.group(1).strip().lower() == "yes"
+    #     question_type = qtype.group(1).strip().lower() if qtype else "general"
+    #     question_text = question.group(1).strip() if question else ""
+    #     return should_ask, question_type, question_text
 
 
 class UserResponseHandler:
@@ -406,13 +389,6 @@ class RobotController:
         # 添加提问相关属性
         self.failed_attempts = 0
         self.last_question = None
-        self.user_responses = []
-        # 新增：统一历史记录字典
-        self.history = {
-            "observation": [],
-            "planning": [],
-            "qa": []
-        }
 
 
     def add_memory(self, entry, memory_type):
@@ -484,121 +460,28 @@ class RobotController:
         self.metadata = self.controller.last_event.metadata
         self.navigable_list = self.update_navigable_list_vtime()
 
-    def save_initial_observation_image(self):
-        event = self.controller.last_event
-        init_image_path = f"{self.origin_path}/0_init_observe.png"
-        os.makedirs(os.path.dirname(init_image_path), exist_ok=True)
-        save_image(event, init_image_path)
-        return init_image_path
-
     def generate_observation(self, image_path):
         # 传递 navigable_list 以便 Observation 只描述可导航类别
         # 初始化可导航列表
         self.navigable_list = self.initial_navigable_list()
         obs = self.observation_generator.generate_observation(image_path, self.navigable_list)
-        # 记录 observation 历史，增加 round
-        self.history["observation"].append({"round": self.round, "content": obs})
         return obs
 
     def plan_high_level_task(self, taskname, environment_description, memory_text=None):
         """首次任务规划：将任务分解为子任务，不使用memory"""
-        subtasks = self.task_planner.plan_high_level_subgoals(
+        subgoals = self.task_planner.plan_high_level_subgoals(
             taskname, environment_description, memory_text=memory_text
         )
-        self.add_memory(f"Initial Task Planning: {subtasks}", "planning")
-        # 记录 planning 历史，增加 round
-        self.history["planning"].append({"round": self.round, "content": subtasks})
-        return subtasks
-
-    def plan_task(self, taskname, environment_description):
-        """任务规划：将任务分解为子任务，并将memory作为上下文"""
-        memory_text = self.get_memory_text()
-        subtasks = self.task_planner.init_plan_task(
-            taskname, environment_description, navigable_list=self.navigable_list, memory_text=memory_text
-        )
-        self.add_memory(f"Task Planning: {subtasks}", "planning")
-        # 记录 planning 历史，增加 round
-        self.history["planning"].append({"round": self.round, "content": subtasks})
-        return subtasks
-
-    def format_subtasks_as_tags(self, subtasks):
-        """将subtasks列表格式化为 <SubtaskN> 标签字符串"""
-        tag_strs = []
-        for sub in subtasks:
-            tag_strs.append(f"<Subtask{sub['subtask_id']}> [{sub['action']}] [{sub['objectType']}] </Subtask{sub['subtask_id']}>\n")
-        return "".join(tag_strs)
-
-    def get_user_response(self, question):
-        """模拟或实际获取用户回答。实际部署时可替换为input()或UI交互。"""
-        user_response = input("😁：请输入你的回答：")
-        # 这里可替换为实际交互
-        return user_response
+        self.add_memory(f"Initial Task Planning: {subgoals}", "planning")
+        return subgoals
 
     def get_navigable_list(self):
         """获取可导航列表"""
         return self.navigable_list
 
-    def add_to_history(self, object_info):
-        """添加对象到历史列表"""
-        self.his_objects_list.append(object_info)
-        self.add_memory(f"History: {object_info}", "history")
-
-
     def receive_user_response(self, response):
         """接收用户回答"""
-        self.user_responses.append({
-            "question": self.last_question,
-            "response": response,
-            "timestamp": time.time()
-        })
-        # 记录问答历史，增加 round
-        self.history["qa"].append({"round": self.round, "question": self.last_question, "response": response, "type": "answer"})
-        print(f"👤 用户回答: {response}")
-        self.add_memory(f"Robot Question: {self.last_question}. User Response: {response}.", "qa")
-
-    def try_ask_question(self, taskname, observation, subtasks):
-        # 组织 observation
-        obs_str = observation if observation else ""
-        # 格式化 subtasks 为多行可读文本
-        planning_str = ""
-        if isinstance(subtasks, list) and len(subtasks) > 0 and isinstance(subtasks[0], dict):
-            if 'subgoal_id' in subtasks[0]:
-                planning_str = "\n".join([f"Subgoal{sub['subgoal_id']}: {sub.get('subgoal','')} - {sub.get('description','')}" for sub in subtasks])
-            elif 'subtask_id' in subtasks[0]:
-                planning_str = "\n".join([f"Subtask{sub['subtask_id']}: {sub.get('action','')} - {sub.get('objectType','')}" for sub in subtasks])
-            else:
-                planning_str = str(subtasks)
-        elif subtasks:
-            planning_str = str(subtasks)
-        memory_text = self.get_memory_text()
-        should_ask, question_type, question = self.question_generator.should_ask_question_vlm(
-            taskname=taskname,
-            observation=obs_str,
-            planning=planning_str,
-            navigable_list=self.navigable_list
-        )
-        if should_ask:
-            self.last_question = question
-            self.add_memory(f"Question({question_type}): {question}", "question")
-            # 记录问答历史，增加 round
-            self.history["qa"].append({"round": self.round, "question": question, "type": question_type})
-            print(f"\n🤖 机器人提问({question_type}): {question}")
-            return question
-        return None
-
-    def increment_failed_attempts(self):
-        """增加失败次数"""
-        self.failed_attempts += 1
-        self.add_memory(f"Failed attempt #{self.failed_attempts}", "failed_attempts")
-
-    def reset_failed_attempts(self):
-        """重置失败次数"""
-        self.failed_attempts = 0
-        self.add_memory("Reset failed attempts", "failed_attempts")
-
-    def get_question_history(self):
-        """获取提问历史"""
-        return self.user_responses
+        logging.info("[ROBOT QUESTION] %s. User Response: %s.", self.last_question, response)
 
     def ask_general_question_for_plan(self, taskname, subgoals, observation=None):
         """
@@ -607,7 +490,7 @@ class RobotController:
         question = self.question_generator.generate_general_question_for_plan(taskname, subgoals, observation=observation)
         self.last_question = question
         self.add_memory(f"General Question: {question}", "question")
-        print(f"\n🤖 机器人提出general问题: {question}")
+        logging.info("[GENERAL QUESTION] %s", question)
         return question
 
     def set_user_response_handler_context(self, taskname, plan):
@@ -617,6 +500,12 @@ class RobotController:
 
 
 if __name__=="__main__":
+    import logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[logging.StreamHandler()]
+    )
     env="taskgenerate"
     model = "qwen2.5vl:32b" # use gpt-4o to generate trajectories
     # you can set timeout for AI2THOR init here.        
@@ -636,20 +525,20 @@ if __name__=="__main__":
     origin_pos_path = paths['origin_pos_path']
     generate_task = paths['generate_task']
     
-    print("metadata_path:", metadata_path)
-    print("task_metadata_path:", generate_task)
+    logging.info("metadata_path: %s", metadata_path)
+    logging.info("task_metadata_path: %s", generate_task)
     
     # 加载场景元数据和任务
     metadata = scene_manager.load_scene_metadata(metadata_path)
     tasks = scene_manager.load_scene_tasks(generate_task)
 
     for instruction_idx, task in enumerate(tasks, start=0):                                                            
-        print("\n\n*********************************************************************")
-        print(f"Scene:{scene} Task_Type: {tasktype} Processing_Task: {instruction_idx}")
-        print("*********************************************************************\n")
+        logging.info("\n\n*********************************************************************")
+        logging.info(f"Scene:{scene} Task_Type: {tasktype} Processing_Task: {instruction_idx}")
+        logging.info("*********************************************************************\n")
 
         task=tasks[instruction_idx]
-        print("task:",task)
+        logging.info("task: %s", task)
         
         start_time = time.time()
         origin_path=f"data/data_{task['tasktype']}/{scene}_{task['tasktype']}_{instruction_idx}"
@@ -668,47 +557,51 @@ if __name__=="__main__":
                 robot_controller = RobotController(controller, metadata, model, origin_path)
                 
                 # 步骤1：保存初始观察图片
-                init_image_path = robot_controller.save_initial_observation_image()
+                init_image_path = robot_controller.observation_generator.save_initial_observation_image(robot_controller.controller, robot_controller.origin_path)
                 
                 # 步骤2：生成observation
                 observation = robot_controller.generate_observation(init_image_path)
-                print("[Observation]", observation)
+                logging.info("[OBSERVATION] %s", observation)
                 
                 # 步骤3：任务规划（只用高层taskname和observation）
                 taskname = task["taskname"]  # 例如 "把苹果放进冰箱"
-                subtasks = robot_controller.plan_high_level_task(taskname, observation)
-                print("[Initial Task Planning]", subtasks)
+                subgoals = robot_controller.plan_high_level_task(taskname, observation)
+                logging.info("[INITIAL TASK PLANNING] %s", str(subgoals))
                 
                 # 检查是否需要提问
-                question = robot_controller.ask_general_question_for_plan(taskname, subtasks)
+                question = robot_controller.ask_general_question_for_plan(taskname, subgoals)
                 
                 if question:
-                    robot_controller.set_user_response_handler_context(taskname, subtasks)
+                    robot_controller.set_user_response_handler_context(taskname, subgoals)
                     # 获取用户回答
                     user_response = robot_controller.user_response_handler.get_user_response(question)
                     robot_controller.receive_user_response(user_response)
 
-                    print("[Re-planning based on user response]")
+                    logging.info("[RE-PLANNING BASED ON USER RESPONSE]")
                     # 先判断是否需要replan
                     need_replan, reason = robot_controller.user_response_handler.init_response(user_response)
                     if need_replan:
-                        new_subtasks = robot_controller.task_planner.replan_based_on_user_response(
-                            taskname, observation, user_response, robot_controller.get_memory_text(), robot_controller.navigable_list
+                        old_subgoals = robot_controller.task_planner.subgoals
+                        new_subgoals = robot_controller.task_planner.replan_based_on_user_response(
+                            taskname, observation, robot_controller.last_question, user_response, subgoals
                         )
-                        print("[Re-planned Task]", new_subtasks)
-                        robot_controller.add_memory(f"Re-planned Task: {new_subtasks}", "planning")
+                        new_subgoals = robot_controller.task_planner.subgoals
+                        logging.info("[REPLAN] Old subgoals: %s", old_subgoals)
+                        logging.info("[REPLAN] New subgoals: %s", new_subgoals)
+                        logging.info("[RE-PLANNED TASK] %s", str(new_subgoals))
+                        robot_controller.add_memory(f"{new_subgoals}", "planning")
                         # 你可以在此处继续后续执行新规划的逻辑
                     else:
-                        print(f"无需replan，原因：{reason}")
+                        logging.info("[NO REPLAN NEEDED] Reason: %s", reason)
 
                 # 步骤4：获取可导航对象类型（用于后续规划）
                 navigable_types = robot_controller.get_object_types_from_navigable_list()
-                print("[Navigable Types]", navigable_types)
+                logging.info("[NAVIGABLE TYPES] %s", navigable_types)
                 
                 # 步骤5：更新可导航列表
                 robot_controller.update()
                 updated_navigable_list = robot_controller.get_navigable_list()
-                print("[Updated Navigable List]", len(updated_navigable_list), "objects")
+                logging.info("[UPDATED NAVIGABLE LIST] %d objects", len(updated_navigable_list))
                 
                 # 后续步骤：循环执行子任务
                 # for subtask in subtasks:
@@ -757,11 +650,11 @@ if __name__=="__main__":
                 # break
 
             except Exception as e:
-                print(f"Error:{e},try again.")
+                logging.error("[ERROR] %s, try again.", e)
                 clear_folder(origin_path)
             
                 if attempt == max_retries - 1: 
-                    print(f"Retry {max_retries} times, jump the task.")
+                    logging.warning("[RETRY %d TIMES, JUMP THE TASK]", max_retries)
                     error_paths.append(origin_path)  
                     save_data_to_json(error_paths,"./wrong_generte_path_list.json")
                     continue

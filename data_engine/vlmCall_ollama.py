@@ -9,6 +9,7 @@ import time
 import os
 import json
 import requests
+import logging
 
 def load_prompt_config(config_path="config/prompt_config.json"):
     """加载 prompt 配置文件"""
@@ -69,6 +70,8 @@ class VLMAPI:
             max_tokens: 最大token数
             retry_limit: 重试次数
         """
+        print("===== VLM SYSTEXT =====\n%s", systext)
+        print("===== VLM USERTEXT =====\n%s", usertext)
         
         # 构建完整的提示文本
         full_prompt = f"{systext}\n\n{usertext}"
@@ -127,7 +130,6 @@ class VLMAPI:
                     # save_data_to_json(record, save_path)
 
                     t2 = time.time() - t1
-                    print("****** content: \n", content)
                     print(f"********* end call {self.model}: {t2:.2f} *********")
                     
                     return content
