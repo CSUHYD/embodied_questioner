@@ -1,4 +1,5 @@
 import random
+import os
 
 from utils import save_data_to_json,get_scene_metadata,load_json
 
@@ -2332,7 +2333,8 @@ def collect_metadata():
             floorplans = [f"FloorPlan{400 + i}" for i in range(1, 31)]
         
         for scene in floorplans: 
-            metadata_path=f"taskgenerate/{room}/{scene}/metadata.json"
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            metadata_path = os.path.join(base_dir, "taskgenerate", room, scene, "metadata.json")
             get_scene_metadata(scene,metadata_path)         
         
 
@@ -2355,7 +2357,7 @@ if __name__ == "__main__":
         "ordered_pickup_two_object_and_put"         # tasktype: composite subtasktype: Sequential Object Transfer
     ]
     # task_type="single_search"
-    task_type="pickup_and_put"
+    task_type="pickup_from_closerep_and_put"
     
     ##### step2. set the number of tasks to generate for each scene #############
     num=1
@@ -2372,14 +2374,23 @@ if __name__ == "__main__":
             floorplans = [f"FloorPlan{400 + i}" for i in range(1,31)]
 
         for scene in floorplans:  
-            
-            metadata_path=f"taskgenerate/{room}/{scene}/metadata.json"
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            metadata_path = os.path.join(base_dir, "taskgenerate", room, scene, "metadata.json")
             print(metadata_path)
+            if not os.path.exists(metadata_path):
+                print(f"Error: {metadata_path} not found. 跳过该场景。")
+                continue
             metadata=load_json(metadata_path)
+            if not metadata or not isinstance(metadata, list):
+                print(f"Error: {metadata_path} 内容无效或为空，跳过。")
+                continue
             metadata=metadata[0]
-            generate_task_path=f"{task_type}_task_metadata/{scene}.json"
+            generate_task_path=os.path.join(base_dir, f"{task_type}_task_metadata", f"{scene}.json")
             if task_type=="ordered_pickup_two_object_and_put":
-                generate_task_path=f"ordered/{task_type}_task_metadata/{scene}.json"
+                generate_task_path=os.path.join(base_dir, "ordered", f"{task_type}_task_metadata", f"{scene}.json")
+            # 处理 pick_up_and_put.json 路径
+            pick_up_and_put_path = os.path.join(base_dir, "taskgenerate", "pick_up_and_put.json")
+            # 传递给 TaskGenerate
             taskgenerate=TaskGenerate(metadata,generate_task_path,metadata_path)
 
             if task_type=="single_search":
@@ -2393,12 +2404,33 @@ if __name__ == "__main__":
             elif task_type=="single_toggle":
                 taskgenerate.single_toggle(num)
             elif task_type=="pickup_and_put":
+                # 传递绝对路径
+                select_can_put = load_json(pick_up_and_put_path)
+                if select_can_put is None:
+                    print(f"Error: {pick_up_and_put_path} not found or empty, 跳过。")
+                    continue
                 taskgenerate.pickup_and_put(num)
             elif task_type=="pickup_and_put_in_closerep":
+                select_can_put = load_json(pick_up_and_put_path)
+                if select_can_put is None:
+                    print(f"Error: {pick_up_and_put_path} not found or empty, 跳过。")
+                    continue
                 taskgenerate.pickup_and_put_in_closerep(num)
             elif task_type=="pickup_from_closerep_and_put":
+                select_can_put = load_json(pick_up_and_put_path)
+                if select_can_put is None:
+                    print(f"Error: {pick_up_and_put_path} not found or empty, 跳过。")
+                    continue
                 taskgenerate.pickup_from_closerep_and_put(num)
             elif task_type=="pickup_from_closerep_and_put_in_closerep":
+                select_can_put = load_json(pick_up_and_put_path)
+                if select_can_put is None:
+                    print(f"Error: {pick_up_and_put_path} not found or empty, 跳过。")
+                    continue
                 taskgenerate.pickup_from_closerep_and_put_in_closerep(num)
             elif task_type=="ordered_pickup_two_object_and_put":
+                select_can_put = load_json(pick_up_and_put_path)
+                if select_can_put is None:
+                    print(f"Error: {pick_up_and_put_path} not found or empty, 跳过。")
+                    continue
                 taskgenerate.ordered_pickup_two_object_and_put(room,num)

@@ -204,8 +204,12 @@ class TaskPlanner:
 
     def plan_executable_subtasks(self, subgoal, context=None):
         """
-        调用 executable_task_planning prompt，将高层子目标细化为可执行动作序列 <SubtaskN> 标签
+        调用 executable_task_planning prompt，将高层子目标细化为可执行动作序列。
+        严格解析 <SubtaskN> [action] [target_object]</SubtaskN> 格式，action必须在支持的动作类型列表中。
         """
+        supported_actions = [
+            "search", "open", "close", "break", "cook", "slice", "toggle_on", "toggle_off", "dirty", "clean", "fill", "empty", "use_up", "pick_up", "put"
+        ]
         systext = self.config["executable_task_planning"]["systext"]
         usertext = self.config["executable_task_planning"]["usertext"].format(
             subgoal=subgoal,
@@ -213,19 +217,19 @@ class TaskPlanner:
         )
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
-        # 解析 <SubtaskN> 标签
+        # 解析 <SubtaskN> [action] [target_object]</SubtaskN> 格式
         import re
-        subtask_pattern = r'<Subtask(\d+)>\s*\[(.*?)\]\s*\[(.*?)\]\s*</Subtask\1>'
-        matches = re.findall(subtask_pattern, result, re.DOTALL)
+        subtask_pattern = r'<Subtask\d+>\s*([a-zA-Z_]+)\s+([^<\n]+)\s*</Subtask\d+>'
+        matches = re.findall(subtask_pattern, result)
         subtasks = []
-        for match in matches:
-            subtask_num, action, objtype = match
-            subtasks.append({
-                "subtask_id": int(subtask_num),
-                "action": action.strip(),
-                "objectId": "",
-                "objectType": objtype.strip()
-            })
+        for action, objectType in matches:
+            action = action.strip()
+            objectType = objectType.strip()
+            if action in supported_actions:
+                subtasks.append({
+                    "action": action,
+                    "objectType": objectType
+                })
         return subtasks
 
     def replan_based_on_user_response(self, taskname, observation, question, response, subgoal):
@@ -251,6 +255,48 @@ class TaskPlanner:
         subgoals = [m.strip() for m in matches]
         self.subgoals = subgoals  # 更新成员变量
         return subgoals
+
+    def subgoals_to_subtasks(self, subgoals, context=None):
+        """
+        Break down high-level subgoals into a sequence of executable subtasks with decisionmaking, following o1stylegenerate style.
+
+        Args:
+            subgoals (list): List of high-level subgoal strings.
+            context (str, optional): Additional context for planning.
+
+        Returns:
+            list: List of dicts, each with keys:
+                - 'action': The executable action (str)
+                - 'objectType': The target object type (str)
+                - 'decisionmaking': The decision string, e.g. 'navigate to Table'
+        
+        Example output:
+            [
+                {'action': 'navigate to', 'objectType': 'Table', 'decisionmaking': 'navigate to Table'},
+                {'action': 'open', 'objectType': 'Fridge', 'decisionmaking': 'open Fridge'},
+                ...
+            ]
+        """
+        all_subtasks = []
+        for idx, subgoal in enumerate(subgoals):
+            # Decompose each subgoal into executable subtasks
+            subtasks = self.plan_executable_subtasks(subgoal, context=context)
+            for subtask in subtasks:
+                action = subtask.get("action", "")
+                objectType = subtask.get("objectType", "")
+                # Format decision string (no <DecisionMaking> tag)
+                if action and objectType:
+                    decisionmaking = f"{action} {objectType}"
+                elif action:
+                    decisionmaking = f"{action}"
+                else:
+                    decisionmaking = ""
+                all_subtasks.append({
+                    "action": action,
+                    "objectType": objectType,
+                    "decisionmaking": decisionmaking
+                })
+        return all_subtasks
 
 
 class ObservationGenerator:
@@ -366,8 +412,9 @@ class UserResponseHandler:
 
     def get_user_response(self, question):
         """模拟或实际获取用户回答。实际部署时可替换为input()或UI交互。"""
-        user_response = input("😁：请输入你的回答：")
+        # user_response = input("😁：请输入你的回答：")
         # 这里可替换为实际交互
+        user_response = 'please find the plate first'
         return user_response
 
 
@@ -498,6 +545,113 @@ class RobotController:
         self.user_response_handler.plan = plan
         self.user_response_handler.memory = self.memory
 
+    def rank_possible_placement_locations(self, target, observation, navigable_list, max_num=3):
+        """
+        输入目标、环境描述、可导航物体列表，调用VLM/LLM排序最有可能放置目标的位置
+        返回排序后的objectType列表，长度不超过max_num
+        """
+        categories = list(set([item["objectType"] for item in navigable_list]))
+        prompt_cfg = self.observation_generator.config.get("placement_ranking", {})
+        systext = prompt_cfg.get("systext", "")
+        usertext_template = prompt_cfg.get("usertext", "")
+        usertext = usertext_template.format(
+            target=target,
+            observation=observation,
+            categories=", ".join(categories),
+            max_num=max_num
+        )
+        llmapi = VLMAPI(self.model)
+        result = llmapi.vlm_request(systext, usertext)
+        # 解析结果为列表
+        result = result.strip('[]')
+        result = result.replace(" ", "").replace("'", "").replace('"', "")
+        possible_list = [x for x in result.split(',') if x in categories]
+        return possible_list[:max_num]
+
+    def navigate_to_object(self, object_id):
+        """
+        导航到指定objectId的位置。假设有RocAgent或controller的navigate方法。
+        """
+        # 这里假设你有RocAgent或类似API
+        # 你可以根据实际情况替换为你的底层导航实现
+        target_object = next((item for item in self.metadata["objects"] if item["objectId"] == object_id), None)
+        if target_object is None:
+            print(f"[NAVIGATION] ObjectId {object_id} not found in metadata.")
+            return False
+        # 假设有self.rocAgent
+        if hasattr(self, "rocAgent"):
+            self.rocAgent.navigate(target_object)
+        else:
+            # 如果没有rocAgent，可以在此处集成controller的导航API
+            print(f"[NAVIGATION] Navigating to object {object_id} (type: {target_object['objectType']})")
+            # 伪代码：self.controller.step(action="Navigate", objectId=object_id)
+        return True
+
+    def navigate_to_possible_locations(self, possible_list, navigable_list):
+        """
+        依次导航到possible_list中的objectType对应的位置。
+        """
+        for object_type in possible_list:
+            object_id = next((item["objectId"] for item in navigable_list if item["objectType"] == object_type), None)
+            if object_id is None:
+                print(f"[NAVIGATION] No objectId found for objectType {object_type}.")
+                continue
+            print(f"[NAVIGATION] Navigating to {object_type} (objectId: {object_id}) ...")
+            success = self.navigate_to_object(object_id)
+            # 可选：每次导航后可插入检测是否已找到目标的逻辑
+            # if self.check_target_found():
+            #     print("[NAVIGATION] Target found, stopping navigation.")
+            #     break
+
+    def verify_task_completed(self):
+        """
+        判断当前任务是否完成。可根据metadata、flag、reward等，也可扩展为VLM判定。
+        返回True表示完成，False表示未完成。
+        """
+        # 示例1：基于metadata的flag
+        if hasattr(self, "metadata") and isinstance(self.metadata, dict):
+            if self.metadata.get("flag") == "success":
+                return True
+        # 示例2：基于reward
+        if hasattr(self, "reward") and getattr(self, "reward", 0) >= getattr(self, "totalreward", 1):
+            return True
+        # 示例3：可扩展为VLM判定
+        # result = self.check_completion_via_vlm(...)
+        # if result: return True
+        return False
+
+    def execute_subtasks(self, subtasks_with_decision, navigable_list=None):
+        """
+        遍历subtasks_with_decision，自动执行导航或输出交互动作。
+        navigable_list可选，未传则自动获取。
+        每步执行后自动判定是否完成，完成则提前终止。
+        """
+        if navigable_list is None:
+            navigable_list = self.get_navigable_list()
+        for subtask in subtasks_with_decision:
+            action = subtask["action"]
+            object_type = subtask["objectType"]
+            decisionmaking = subtask["decisionmaking"]
+            print(f"[EXECUTE] {decisionmaking}")
+
+            if action.lower() in ["navigate to", "goto", "go to", "move to"]:
+                object_id = next((item["objectId"] for item in navigable_list if item["objectType"] == object_type), None)
+                if object_id:
+                    self.navigate_to_object(object_id)
+                else:
+                    print(f"[WARNING] No objectId found for objectType {object_type} in navigable_list.")
+            elif action.lower() in ["pickup", "pick up", "open", "close", "toggle"]:
+                print(f"[INTERACT] Would perform {action} on {object_type} (需实现具体API)")
+            else:
+                print(f"[SKIP] Action {action} not recognized for auto-execution.")
+
+            # 每步执行后判定是否完成
+            if self.verify_task_completed():
+                print("[COMPLETE] Task judged as completed, stopping further execution.")
+                break
+            else:
+                print("[FAILURE]")
+
 
 if __name__=="__main__":
     import logging
@@ -563,7 +717,7 @@ if __name__=="__main__":
                 observation = robot_controller.generate_observation(init_image_path)
                 logging.info("[OBSERVATION] %s", observation)
                 
-                # 步骤3：任务规划（只用高层taskname和observation）
+                # 步骤3：高层任务规划（只用高层taskname和observation）
                 taskname = task["taskname"]  # 例如 "把苹果放进冰箱"
                 subgoals = robot_controller.plan_high_level_task(taskname, observation)
                 logging.info("[INITIAL TASK PLANNING] %s", str(subgoals))
@@ -585,35 +739,29 @@ if __name__=="__main__":
                         new_subgoals = robot_controller.task_planner.replan_based_on_user_response(
                             taskname, observation, robot_controller.last_question, user_response, subgoals
                         )
-                        new_subgoals = robot_controller.task_planner.subgoals
+                        robot_controller.task_planner.subgoals = new_subgoals
                         logging.info("[REPLAN] Old subgoals: %s", old_subgoals)
                         logging.info("[REPLAN] New subgoals: %s", new_subgoals)
-                        logging.info("[RE-PLANNED TASK] %s", str(new_subgoals))
                         robot_controller.add_memory(f"{new_subgoals}", "planning")
                         # 你可以在此处继续后续执行新规划的逻辑
                     else:
                         logging.info("[NO REPLAN NEEDED] Reason: %s", reason)
 
-                # 步骤4：获取可导航对象类型（用于后续规划）
-                navigable_types = robot_controller.get_object_types_from_navigable_list()
-                logging.info("[NAVIGABLE TYPES] %s", navigable_types)
                 
-                # 步骤5：更新可导航列表
-                robot_controller.update()
-                updated_navigable_list = robot_controller.get_navigable_list()
-                logging.info("[UPDATED NAVIGABLE LIST] %d objects", len(updated_navigable_list))
-                
-                # 后续步骤：循环执行子任务
-                # for subtask in subtasks:
-                #     print("执行子任务:", subtask)
-                #     # 这里可以根据subtask["action"]和["objectType"]等，调用底层控制API
-                #     # 每步可观测、可replan
-                #     # 伪代码：
-                #     # result = robot_controller.execute_subtask(subtask)
-                #     # if result == "need_replan":
-                #     #     observation = robot_controller.generate_observation(...)
-                #     #     subtasks = robot_controller.plan_task(taskname, observation)
-                #     #     break
+                # 步骤4：底层任务规划：把subgoals细化为可执行subtasks，并生成decisionmaking
+                # 遍历 subgoals
+                #   把 subgoal 转化成可以执行决策decisionmaking，即机器人的 actions（包含find, navigate, interact等）
+                #       遍历 actions
+                #       Execute：执行action
+                #       确认是否完成（通过截图+VLM）
+                subtasks_with_decision = robot_controller.task_planner.subgoals_to_subtasks(subgoals)
+                logging.info("[SUBTASKS WITH DECISION] %s", subtasks_with_decision)
+                robot_controller.execute_subtasks(subtasks_with_decision)
+                # 可选：每步执行后插入“确认是否完成”逻辑（如通过截图+VLM判断）
+                # for subtask in subtasks_with_decision:
+                #     # ...执行action后...
+                #     # result = robot_controller.check_completion_via_vlm(...)
+                #     # if result: break
                 
                 # o1stylegenerate=O1StyleGenerate(
                 #     controller,scene,origin_path,metadata,task,model=model

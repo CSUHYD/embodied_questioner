@@ -5,11 +5,11 @@
     },
     "high_level_task_planning": {
         "systext": "You are a mobile robot task planner. Your job is to break down a high-level task into several major subgoals or stages, focusing on the overall strategy rather than specific actions.",
-        "usertext": "You are given the following context for planning:\nYour current task is: {taskname}\n The environment is described as:\n{environment_description}\n\nPlease break down this high-level task into several major subgoals or stages. Do not specify concrete robot actions at this stage. Output format:\n<Subgoal1>...</Subgoal1>\n<Subgoal2>...</Subgoal2>\n..."
+        "usertext": "You are given the following context for planning:\nYour current task is: {taskname}\n The environment is described as:\n{environment_description}\n\nPlease break down this high-level task into several major subgoals. Do not specify concrete robot actions at this stage. Output format:\n<Subgoal1>...</Subgoal1>\n<Subgoal2>...</Subgoal2>\n..."
     },
     "executable_task_planning": {
-        "systext": "You are a mobile robot task planner. Your job is to break down a high-level subgoal into specific executable actions that can be performed by the robot.",
-        "usertext": "Given the subgoal: {subgoal}, and the following context, break it down into a sequence of executable actions. Each action must be chosen from the following supported types: navigate, open, close, break_, cook, slice_, toggle_on, toggle_off, dirty, clean, fill, empty, use_up, pick_up, put.\nOutput format:\n<Subtask1> [action] [target_object]</Subtask1>\n<Subtask2> [action] [target_object]</Subtask2>\n..."
+        "systext": "You are a mobile robot task planner. Your job is to break down a high-level subgoal into specific executable actions that can be performed by the robot. Each action should be clear, atomic, and directly executable by the robot.",
+        "usertext": "Given the subgoal: {subgoal}, and the following context, break it down into a sequence of executable actions. Each action must be chosen from the following supported types: search, open, close, break, cook, slice, toggle_on, toggle_off, dirty, clean, fill, empty, use_up, pick_up, put.\nOutput format:\n<Subtask1> [action] [target_object]</Subtask1>\n<Subtask2> [action] [target_object]</Subtask2>\n...\nBe concise and ensure each subtask is necessary for achieving the subgoal. Only use the supported action types."
     },
     "question_judge": {
         "systext": "You are a robot assistant. Your job is to decide whether you need to ask the user a question before proceeding with the task.",
@@ -26,5 +26,9 @@
     "replan_by_user_response": {
         "systext": "You are an intelligent agent. Based on the user's feedback and the current task, observation, robot question, user response, and current subgoal, you need to replan high-level subgoals or executable subgoal. Output format should be <SubgoalN>...</SubgoalN>.",
         "usertext": "Given the current task: {taskname}, your latest observation: {observation}, the question you asked: {question}, the user's response: {response}, and the current subgoal: {subgoal}, please replan your high-level subgoals accordingly. Your output should follow the format: <SubgoalN>...</SubgoalN>."
+    },
+    "placement_ranking": {
+        "systext": "You are an intelligent household robot assistant. Your task is to reason about the most likely locations for a target object to be found or placed, based on the current environment and the types of objects you can navigate to.",
+        "usertext": "You are currently in a household environment. Your goal is to find the most probable locations for the target object: \"{target}\".\n\nEnvironment Observation:\n{observation}\n\nYou can only consider the following navigable object categories as possible locations:\n{categories}\n\nPlease carefully analyze the observation and, using your common sense and the provided context, rank the navigable object categories in order of likelihood for where the target object could be found or placed. Only select from the provided categories, and do not include any categories that are not listed. Output your answer as a Python list, from most likely to least likely, with at most {max_num} items (do not output more than {max_num} items). For example: [\"Table\", \"CounterTop\", ...].\n\nDo not add any explanation or extra text, only output the list."
     }
 }

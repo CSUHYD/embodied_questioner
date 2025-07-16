@@ -6,8 +6,9 @@ import time
 import threading
 import copy
 from PIL import Image
+import os
 
-from vlmCall import VLMAPI
+from vlmCall_ollama import VLMAPI
 from utils import save_data_to_json,save_image,clear_folder,load_json,get_volume_distance_rate
 
 from baseAction import BaseAction
@@ -2104,7 +2105,7 @@ def run_initial_scene(timeout, scene_diagonal, origin_pos_path, retry_limit=3):
 
 if __name__=="__main__":
     env="taskgenerate"
-    model = "gpt-4o-2024-11-20" # use gpt-4o to generate trajectories
+    model = "qwen2.5vl:32b" # use gpt-4o to generate trajectories
     # you can set timeout for AI2THOR init here.
     timeout=40           
     
@@ -2140,7 +2141,7 @@ if __name__=="__main__":
                "single_search_from_closerep",               
                "single_pickup_from_closerep"                
                ]
-    tasktype="single_search"
+    tasktype="pickup_from_closerep_and_put"
     
     
     room_type = ['kitchens','living_rooms','bedrooms','bathrooms']
@@ -2165,14 +2166,15 @@ if __name__=="__main__":
             for scene in floorplans:   
                 if scene in ['FloorPlan8']:
                     continue
-                metadata_path=f"{env}/{room}/{scene}/metadata.json"
-                print("metadata_path:",metadata_path)
-                generate_task=f"{tasktype}_task_metadata/{scene}.json"
-                print("task_metadata_path:",generate_task)
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                metadata_path = os.path.join(base_dir, "taskgenerate", room, f"{scene}", "metadata.json")
+                task_metadata_path = os.path.join(base_dir, "pickup_from_closerep_and_put_task_metadata", f"{scene}.json")
+                print(f"metadata_path: {metadata_path}")
+                print(f"task_metadata_path: {task_metadata_path}")
                 
                 metadata=load_json(metadata_path)
                 metadata=metadata[0]
-                tasks=load_json(generate_task)
+                tasks=load_json(task_metadata_path)
                 if tasks:
                     tasks=tasks[0]
                 else:
@@ -2191,7 +2193,8 @@ if __name__=="__main__":
                     
                     scene_size= metadata["sceneBounds"]["size"]
                     scene_diagonal = math.sqrt(scene_size["x"]**2 + scene_size["z"]**2)
-                    origin_pos_path=f"{env}/{room}/{scene}/originPos.json" 
+                    base_dir = os.path.dirname(os.path.abspath(__file__))
+                    origin_pos_path = os.path.join(base_dir, env, room, scene, "originPos.json")
                     max_retries=2
                     error_paths = []  
                     for attempt in range(max_retries + 1): 
