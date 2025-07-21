@@ -231,41 +231,45 @@ class TaskPlanner:
             "search", "open", "close", "break", "cook", "slice", "toggle_on", "toggle_off", "dirty", "clean", "fill", "empty", "use_up", "pick_up", "put"
         ]
         all_decisions_str = "\n".join([f"{d['action']} {d['objectType']} {d.get('targetObject', None)}" for d in all_decisions]) if all_decisions else ""
+        
         if mode == "tasks":
             prompt_key = "executable_task_planning_from_tasks"
             prompt_vars = {"subtask": subgoal_or_subtask, "supported_actions": supported_actions, "all_decisions": all_decisions_str}
         else:
             prompt_key = "executable_task_planning_from_goals"
             prompt_vars = {"subgoal": subgoal_or_subtask, "supported_actions": supported_actions, "all_decisions": all_decisions_str}
+            
         systext = self.config[prompt_key]["systext"]
         usertext = self.config[prompt_key]["usertext"].format(**prompt_vars)
+        
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
+        
         import re
-        # put 动作支持两个参数
-        subtask_pattern = r'<Subtask\d+>\s*([a-zA-Z_]+)\s+([a-zA-Z0-9_]+)(?:\s+on\s+([a-zA-Z0-9_]+)|\s+([a-zA-Z0-9_]+))?\s*</Subtask\d+>'
+        subtask_pattern = r'<Subtask\d+>(.*?)</Subtask\d+>'
         matches = re.findall(subtask_pattern, result)
+        
         subtasks = []
         for match in matches:
-            action = match[0].strip()
-            arg1 = match[1].strip() if match[1] else ""
-            arg2 = match[2].strip() if match[2] else (match[3].strip() if match[3] else "")
+            parts = match.strip().split()
+            if not parts:
+                continue
+            
+            action = parts[0]
+            args = parts[1:]
+            
             if action in supported_actions:
-                if action == "put":
-                    # put apple plate 或 put apple on plate
-                    if not any(d['action'] == action and d.get('objectType','') == arg1 and d.get('targetObject','') == arg2 for d in all_decisions):
-                        subtasks.append({
-                            "action": action,
-                            "objectType": arg1,
-                            "targetObject": arg2
-                        })
-                else:
-                    if not any(d['action'] == action and d['objectType'] == arg1 for d in all_decisions):
-                        subtasks.append({
-                            "action": action,
-                            "objectType": arg1,
-                            "targetObject": None
-                        })
+                # 假设第一个参数是objectType，第二个是targetObject（如果有的话）
+                objectType = args[0] if len(args) > 0 else None
+                targetObject = args[1] if len(args) > 1 else None
+
+                # 去重检查
+                if not any(d['action'] == action and d.get('objectType') == objectType and d.get('targetObject') == targetObject for d in all_decisions):
+                    subtasks.append({
+                        "action": action,
+                        "objectType": objectType,
+                        "targetObject": targetObject
+                    })
         return subtasks
 
     def replan_based_on_user_response(self, taskname, observation, question, response, subgoal):
@@ -380,9 +384,69 @@ class TaskPlanner:
 
     def subtasks_to_decisions(self, subtasks):
         """
+        将一组subtasks一次性转换为可执行的decisions序列。
+        这个方法会考虑整体任务上下文，生成完整的执行计划。
+
+        Args:
+            subtasks: 子任务列表，每个子任务是一个字符串
+
+        Returns:
+            list: 可执行的decisions列表
+        """
+        if not subtasks:
+            return []
+
+        # 1. 准备支持的动作列表
+        supported_actions = [
+            "search", "open", "close", "break", "cook", "slice", "toggle_on", "toggle_off",
+            "dirty", "clean", "fill", "empty", "use_up", "pick_up", "put"
+        ]
+
+        # 2. 准备prompt变量
+        prompt_cfg = self.config.get("subtasks_to_decisions", {})
+        systext = prompt_cfg.get("systext", "")
+        usertext = prompt_cfg.get("usertext", "").format(
+            subtasks="\n".join(f"- {task}" for task in subtasks),
+            supported_actions=", ".join(supported_actions)
+        )
+
+        # 3. 调用VLM获取执行计划
+        llmapi = VLMAPI(self.model)
+        result = llmapi.vlm_request(systext, usertext)
+
+        # 4. 解析VLM输出
+        import re
+        task_pattern = r'<Task\d+>(.*?)</Task\d+>'
+        matches = re.findall(task_pattern, result)
+
+        # 5. 转换为decisions格式
+        decisions = []
+        for match in matches:
+            parts = match.strip().split()
+            if not parts:
+                continue
+
+            action = parts[0]
+            args = parts[1:]
+
+            if action in supported_actions:
+                objectType = args[0] if len(args) > 0 else None
+                targetObject = args[1] if len(args) > 1 else None
+                
+                decision = {
+                    "action": action,
+                    "objectType": objectType,
+                    "targetObject": targetObject,
+                    "decisionmaking": " ".join(parts)
+                }
+                decisions.append(decision)
+
+        return decisions
+
+    def subtasks_to_decisions_stepbystep(self, subtasks):
+        """
         将自然语言subtasks（如'Find the apple'）转为可执行action结构，并去重。
-        返回格式：[{"action":..., "objectType":..., "targetObject":..., "decisionmaking":...}, ...]
-        其中 put 动作支持两个参数：objectType 和 targetObject。
+        这个方法会逐个处理每个subtask。
         """
         all_decisions = []
         seen = set()
@@ -697,7 +761,7 @@ class RobotController:
         if question:
             self.last_question = question
             self.add_memory(f"General Question: {question}", "question")
-        logging.info("[GENERAL QUESTION] %s", question)
+            logging.info("[GENERAL QUESTION] %s", question)
         return question
 
     def get_qa_history(self):
@@ -854,8 +918,6 @@ class RobotController:
                 print(f"[DEBUG] Current visible objects: {visible_objects}")
                 
                 for obj in metadata["objects"]:
-                    if obj["objectType"].lower() == target.lower():
-                        print(f"[DEBUG] Found {target}, visible={obj.get('visible', True)}")
                     if obj["objectType"].lower() == target.lower() and obj.get("visible", True):
                         print(f"[SEARCH] Found visible {target} in/on {object_type}")
                         return True  # 如果找到了，直接返回True
@@ -877,23 +939,35 @@ class RobotController:
         qa_history = self.get_qa_history()
 
         for decision in decisions:
-            action = decision["action"].lower()  # 统一转为小写
+            action = decision["action"].lower()
             object_type = decision["objectType"]
             decisionmaking = decision["decisionmaking"]
             print(f"[EXECUTE] {decisionmaking}")
 
-            # 1. 导航类动作
-            if action in ["navigate to", "goto", "go to", "move to"]:
+            # 1. 搜索类动作
+            if action in ["search", "find"]:
+                found = self.search_for_object(taskname=taskname,
+                                           target=object_type,
+                                           max_num=3,
+                                           qa_history=qa_history)
+                if not found:
+                    print(f"[ERROR] Search failed for {object_type}, stopping execution.")
+                    break
+                continue
+
+            # 2. 导航类动作
+            elif action in ["navigate to", "goto", "go to", "move to"]:
                 object_id = next((item["objectId"] for item in navigable_list if item["objectType"].lower() == object_type.lower()), None)
                 if object_id:
                     self.navigate_to_object(object_id)
                     self.update_metadata()
                 else:
-                    print(f"[WARNING] No objectId found for objectType {object_type} in navigable_list.")
+                    print(f"[WARNING] Cannot navigate to {object_type}, as it is not in the navigable list.")
+                continue
 
-            # 2. 交互类动作
+            # 3. 交互类动作
             elif action in ["pickup", "pick up", "pick_up", "open", "close", "toggle"]:
-                # 2.1 获取目标物体
+                # 3.1 获取目标物体
                 object_id = None
                 metadata = self.update_metadata()
                 if metadata and "objects" in metadata:
@@ -902,66 +976,34 @@ class RobotController:
                             object_id = obj["objectId"]
                             break
 
-                # 2.2 如果物体不可见，尝试搜索
+                # 3.2 如果物体不可见，则报错并停止
                 if not object_id:
-                    print(f"[SEARCH] {object_type} not visible, searching...")
-                    found = self.search_for_object(taskname=taskname,
-                                                 target=object_type,
-                                                 max_num=3,
-                                                 qa_history=qa_history)
-                    if not found:
-                        print(f"[ERROR] Cannot find visible {object_type}, skipping this action")
-                        continue
+                    print(f"[ERROR] Cannot interact with {object_type} as it is not visible. Please use 'search' first.")
+                    break
 
-                    # 搜索成功后重新获取物体ID
-                    metadata = self.update_metadata()
-                    for obj in metadata["objects"]:
-                        if obj["objectType"].lower() == object_type.lower() and obj.get("visible", True):
-                            object_id = obj["objectId"]
-                            break
+                # 3.3 执行交互动作
+                meta_obj = next((obj for obj in metadata["objects"] if obj["objectId"] == object_id), None)
+                if meta_obj and hasattr(self, "rocAgent"):
+                    # 检查动作是否支持
+                    if action in ["open", "close"] and not meta_obj.get("openable", False):
+                        print(f"[ERROR] {object_type} is not openable, stopping execution.")
+                        break
+                    elif action in ["pickup", "pick up", "pick_up"] and not meta_obj.get("pickupable", False):
+                        print(f"[ERROR] {object_type} is not pickupable, stopping execution.")
+                        break
 
-                # 2.3 执行交互动作
-                if object_id and (metadata := self.update_metadata()) and "objects" in metadata:
-                    meta_obj = next((obj for obj in metadata["objects"] if obj["objectId"] == object_id), None)
-                    if meta_obj and hasattr(self, "rocAgent"):
-                        # 检查动作是否支持
-                        if action in ["open", "close"] and not meta_obj.get("openable", False):
-                            print(f"[ERROR] {object_type} is not openable")
-                            continue
-                        elif action in ["pickup", "pick up", "pick_up"] and not meta_obj.get("pickupable", False):
-                            print(f"[ERROR] {object_type} is not pickupable")
-                            continue
-
-                        self.rocAgent.interact(meta_obj, action)
-                        self.update_metadata()
-                    else:
-                        print(f"[INTERACT] Would perform {action} on {object_type} (需实现具体API)")
+                    success = self.rocAgent.interact(meta_obj, action)
+                    if not success:
+                        print(f"[ERROR] Action {action} failed, stopping execution.")
+                        break
+                    self.update_metadata()
                 else:
-                    print(f"[ERROR] Still cannot find visible {object_type} after search")
-                break
-
-            # 3. 搜索类动作
-            elif action in ["search", "find"]:
-                print(f"[SEARCH] Will search for {object_type}")
-                found = self.search_for_object(taskname=taskname,
-                                           target=object_type,
-                                           max_num=3,
-                                           qa_history=qa_history)
-                if not found:
-                    print(f"[ERROR] Cannot find visible {object_type} in any possible location")
-                break
+                    print(f"[ERROR] Failed to get metadata for {object_type}, stopping execution.")
+                    break
 
             # 4. 未知动作
             else:
                 print(f"[SKIP] Action {action} not recognized for auto-execution.")
-                break
-
-            # 5. 检查任务是否完成
-            if self.verify_task_completed():
-                print("[COMPLETE] Task judged as completed, stopping further execution.")
-                break
-            else:
-                print("[FAILURE]")
 
 
 if __name__=="__main__":
@@ -1082,7 +1124,7 @@ if __name__=="__main__":
                 # decisions = subtasks
                 logging.info("[SUBTASKS WITH DECISION] %s", decisions)
                 robot_controller.execute_decisions(taskname, decisions)
-
+                
                 # o1stylegenerate=O1StyleGenerate(
                 #     controller,scene,origin_path,metadata,task,model=model
                 # )
