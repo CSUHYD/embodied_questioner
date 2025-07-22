@@ -1,0 +1,12 @@
+{
+  "task": "put the Tomato in the Plate",
+  "success": false,
+  "reason": "The tomato is visible in the refrigerator, but it is not placed on a plate. Instead, it is directly on the shelf.",
+  "confidence": "high",
+  "original_plan": [
+    "Find the Plate",
+    "Find the Tomato",
+    "Pick up the Tomato",
+    "Put the Tomato on the Plate"
+  ]
+}

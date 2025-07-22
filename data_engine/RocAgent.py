@@ -115,6 +115,8 @@ class RocAgent(BaseAgent):
         self.adjust_view(item)
         self.adjust_height(item)
         
+        # 强制刷新画面以确保视觉更新
+        self.controller.step(action="Pass")
             
         return True, target_position, target_rotation
     
@@ -170,6 +172,9 @@ class RocAgent(BaseAgent):
             self.action.action_mapping["put_in"](self.controller, object_id)
         else:
             raise ValueError(f"Interact type {interact_type} is not defined.")
+        
+        # 强制刷新画面
+        self.controller.step(action="Pass")
         print("RocAgent",self.controller.last_event)
         
 

@@ -703,11 +703,47 @@ if __name__=="__main__":
         scene_diagonal = scene_manager.calculate_scene_diagonal(metadata)
         
         max_retries=2
-        error_paths = []  
+        error_paths = []
+        
+        # 只初始化一次场景，在所有attempt中复用
+        controller, metadata = scene_manager.run_initial_scene(scene_diagonal, origin_pos_path, scene)
+        
         for attempt in range(max_retries + 1): 
             try:
-                # 使用场景管理器初始化场景
-                controller, metadata = scene_manager.run_initial_scene(scene_diagonal, origin_pos_path, scene)
+                # 每次attempt开始时都重置机器人到初始位置，确保状态一致性
+                logging.info(f"[ATTEMPT {attempt + 1}/{max_retries + 1}] Starting task attempt")
+                
+                # 重置到初始位置
+                pos = load_json(origin_pos_path)
+                position = pos["position"]
+                rotation = pos["rotation"]  
+                horizon = pos["cameraHorizon"]   
+                
+                # 执行位置重置
+                reset_result = controller.step(
+                    action="Teleport",
+                    position=position,
+                    rotation=rotation,
+                    horizon=horizon,
+                    standing=True
+                )
+                
+                if not reset_result.metadata["lastActionSuccess"]:
+                    logging.warning(f"[RESET] Failed to reset robot position on attempt {attempt + 1}")
+                else:
+                    logging.info(f"[RESET] Successfully reset robot to initial position: {position}")
+                
+                # 确保机器人处于站立状态
+                controller.step(action="Stand")
+                
+                # 更新metadata
+                metadata = controller.last_event.metadata
+                
+                # 如果有物体被拿着，放下它们
+                for obj in metadata["objects"]:
+                    if obj["isPickedUp"]:
+                        logging.info(f"[RESET] Dropping held object: {obj['objectId']}")
+                        controller.step(action="DropHandObject", forceAction=True)
 
                 # 封装后的机器人控制器
                 robot_controller = RobotController(controller, metadata, model, origin_path)

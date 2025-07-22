@@ -19,13 +19,28 @@ import functools
 import logging
 
 
+# 设置日志配置
+def setup_logging(log_file=None):
+    """设置日志配置，支持同时输出到控制台和文件"""
+    handlers = [logging.StreamHandler()]  # 控制台输出
+    if log_file:
+        handlers.append(logging.FileHandler(log_file, encoding='utf-8'))  # 文件输出
+    
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=handlers,
+        force=True  # 强制重新配置
+    )
+
+
 def load_prompt_config(config_path="config/prompt_config.json"):
     """加载 prompt 配置文件"""
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
-        print(f"Warning: Config file {config_path} not found, using default config")
+        logging.warning(f"Config file {config_path} not found, using default config")
         return 
 
 def load_scene_config(config_path="config/scene_config.json"):
@@ -34,7 +49,7 @@ def load_scene_config(config_path="config/scene_config.json"):
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
-        print(f"Warning: Scene config file {config_path} not found, using default config")
+        logging.warning(f"Scene config file {config_path} not found, using default config")
         return {}
 
 # 默认配置
@@ -153,12 +168,12 @@ class SceneManager:
         init_thread.join(self.timeout) 
 
         if init_thread.is_alive():
-            print(f"Initialization exceeded {self.timeout} seconds, retrying...")
+            logging.warning(f"Initialization exceeded {self.timeout} seconds, retrying...")
             retry_count += 1
             controller, metadata = self.initialize_scene(scene_diagonal, origin_pos_path, scene)
             return controller, metadata
         else:
-            print("Initialization succeeded") 
+            logging.info("Initialization succeeded") 
             return controller, metadata
 
     def load_scene_metadata(self, metadata_path):
@@ -320,17 +335,21 @@ class TaskPlanner:
 
     def replan_subtasks_based_on_user_response(self, taskname, observation, question, response, subtasks):
         """
-        根据用户回答，调用high_level_task_planning prompt重新规划subtasks。
+        根据用户回答，重新规划subtasks，确保考虑用户的具体要求。
         """
-        prompt_cfg = self.config.get("high_level_task_planning")
+        prompt_cfg = self.config.get("replan_subtasks_based_on_user_response")
         systext = prompt_cfg["systext"]
         usertext = prompt_cfg["usertext"]
+        
+        # 格式化原始计划
+        subtasks_str = '\n'.join([f"- {task}" for task in subtasks]) if subtasks else ""
+        
         usertext = usertext.format(
             taskname=taskname,
             environment_description=observation or "",
             question=question or "",
             response=response or "",
-            subtasks='\n'.join(subtasks) if subtasks else ""
+            subtasks=subtasks_str
         )
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
@@ -419,8 +438,10 @@ class TaskPlanner:
         task_pattern = r'<Task\d+>(.*?)</Task\d+>'
         matches = re.findall(task_pattern, result)
 
-        # 5. 转换为decisions格式
+        # 5. 转换为decisions格式并去重
         decisions = []
+        seen_actions = set()  # 用于去重
+        
         for match in matches:
             parts = match.strip().split()
             if not parts:
@@ -433,14 +454,26 @@ class TaskPlanner:
                 objectType = args[0] if len(args) > 0 else None
                 targetObject = args[1] if len(args) > 1 else None
                 
-                decision = {
-                    "action": action,
-                    "objectType": objectType,
-                    "targetObject": targetObject,
-                    "decisionmaking": " ".join(parts)
-                }
-                decisions.append(decision)
+                # 创建去重键
+                if action == "put":
+                    dedup_key = (action, objectType, targetObject)
+                else:
+                    dedup_key = (action, objectType)
+                
+                # 检查是否重复
+                if dedup_key not in seen_actions:
+                    decision = {
+                        "action": action,
+                        "objectType": objectType,
+                        "targetObject": targetObject,
+                        "decisionmaking": " ".join(parts)
+                    }
+                    decisions.append(decision)
+                    seen_actions.add(dedup_key)
+                else:
+                    logging.debug(f"[DEDUP] Skipping duplicate action: {' '.join(parts)}")
 
+        logging.info(f"[DECISIONS] Generated {len(decisions)} unique actions from {len(matches)} total actions")
         return decisions
 
     def subtasks_to_decisions_stepbystep(self, subtasks):
@@ -622,7 +655,7 @@ class UserResponseHandler:
         """模拟或实际获取用户回答。实际部署时可替换为input()或UI交互。"""
         # user_response = input("😁：请输入你的回答：")
         # 这里可替换为实际交互
-        user_response = 'please find the plate first'
+        user_response = 'please clean the tomato before put on the plate.'
         return user_response
 
 
@@ -825,6 +858,57 @@ class RobotController:
 
         return possible_list[:place_num]
 
+    def verify_task_completion(self, taskname, original_plan, image_path=None):
+        """
+        使用VLM验证任务是否成功完成
+        Args:
+            taskname: 任务名称
+            original_plan: 原始计划列表
+            image_path: 验证图片路径，如果为None则自动截图
+        Returns:
+            tuple: (is_success: bool, reason: str, confidence: str)
+        """
+        try:
+            # 如果没有提供图片路径，则自动截图
+            if image_path is None:
+                import os
+                verification_dir = f"{self.origin_path}/verification"
+                os.makedirs(verification_dir, exist_ok=True)
+                image_path = f"{verification_dir}/final_verification.png"
+                save_image(self.controller.last_event, image_path)
+                logging.info(f"[VERIFY] Saved verification image: {image_path}")
+            
+            # 准备prompt参数
+            prompt_cfg = self.observation_generator.config.get("task_verification", {})
+            systext = prompt_cfg.get("systext", "")
+            usertext = prompt_cfg.get("usertext", "").format(
+                taskname=taskname,
+                original_plan="\n".join([f"- {plan}" for plan in original_plan])
+            )
+            
+            # 调用VLM进行验证
+            llmapi = VLMAPI(self.model)
+            result = llmapi.vlm_request(systext, usertext, image_path)
+            
+            # 解析VLM返回结果
+            import re
+            success_match = re.search(r'SUCCESS:\s*(yes|no)', result, re.IGNORECASE)
+            reason_match = re.search(r'REASON:\s*(.*?)(?=\nCONFIDENCE:|$)', result, re.DOTALL)
+            confidence_match = re.search(r'CONFIDENCE:\s*(high|medium|low)', result, re.IGNORECASE)
+            
+            is_success = success_match and success_match.group(1).strip().lower() == "yes" if success_match else False
+            reason = reason_match.group(1).strip() if reason_match else "No reason provided"
+            confidence = confidence_match.group(1).strip().lower() if confidence_match else "unknown"
+            
+            logging.info(f"[VERIFY] Task verification result: SUCCESS={is_success}, CONFIDENCE={confidence}")
+            logging.info(f"[VERIFY] Reason: {reason}")
+            
+            return is_success, reason, confidence
+            
+        except Exception as e:
+            logging.error(f"[VERIFY] Error during task verification: {e}")
+            return False, f"Verification failed due to error: {e}", "low"
+
     def navigate_to_object(self, object_id):
         """
         导航到指定objectId的位置。假设有RocAgent或controller的navigate方法。
@@ -833,14 +917,14 @@ class RobotController:
         # 你可以根据实际情况替换为你的底层导航实现
         target_object = next((item for item in self.metadata["objects"] if item["objectId"] == object_id), None)
         if target_object is None:
-            print(f"[NAVIGATION] ObjectId {object_id} not found in metadata.")
+            logging.warning(f"[NAVIGATION] ObjectId {object_id} not found in metadata.")
             return False
         # 假设有self.rocAgent
         if hasattr(self, "rocAgent"):
             self.rocAgent.navigate(target_object)
         else:
             # 如果没有rocAgent，可以在此处集成controller的导航API
-            print(f"[NAVIGATION] Navigating to object {object_id} (type: {target_object['objectType']})")
+            logging.info(f"[NAVIGATION] Navigating to object {object_id} (type: {target_object['objectType']})")
             # 伪代码：self.controller.step(action="Navigate", objectId=object_id)
         return True
 
@@ -848,6 +932,8 @@ class RobotController:
         """
         更新并获取最新的场景状态。
         """
+        # 强制执行一个空步骤来刷新场景
+        self.controller.step(action="Pass")
         self.metadata = self.controller.last_event.metadata
         return self.metadata
 
@@ -869,7 +955,7 @@ class RobotController:
         if self.update_metadata() and "objects" in self.metadata:
             for obj in self.metadata["objects"]:
                 if obj["objectType"].lower() == target.lower() and obj.get("visible", True):
-                    print(f"[SEARCH] Found visible {target} in current view")
+                    logging.info(f"[SEARCH] Found visible {target} in current view")
                     return True
 
         # 2. 获取可能的位置列表
@@ -883,12 +969,12 @@ class RobotController:
         )
 
         if not possible_locations:
-            print(f"[SEARCH] No possible locations found for {target}")
+            logging.warning(f"[SEARCH] No possible locations found for {target}")
             return False
 
         # 3. 检查每个可能位置
         for object_type in possible_locations:
-            print(f"[SEARCH] Checking {object_type}")
+            logging.info(f"[SEARCH] Checking {object_type}")
             # 3.1 获取位置对象
             object_id = next((item["objectId"] for item in navigable_list if item["objectType"].lower() == object_type.lower()), None)
             if not object_id:
@@ -903,7 +989,7 @@ class RobotController:
             if "objects" in self.metadata:
                 meta_obj = next((obj for obj in self.metadata["objects"] if obj["objectId"] == object_id), None)
                 if meta_obj and meta_obj.get("openable", False) and not meta_obj.get("isOpen", False):
-                    print(f"[SEARCH] {object_type} is closed, opening...")
+                    logging.info(f"[SEARCH] {object_type} is closed, opening...")
                     if hasattr(self, "rocAgent"):
                         self.rocAgent.interact(meta_obj, "open")
                         # 更新metadata以获取打开容器后的最新状态
@@ -915,17 +1001,17 @@ class RobotController:
             if metadata and "objects" in metadata:
                 # 添加调试信息
                 visible_objects = [obj["objectType"] for obj in metadata["objects"] if obj.get("visible", True)]
-                print(f"[DEBUG] Current visible objects: {visible_objects}")
+                logging.debug(f"[DEBUG] Current visible objects: {visible_objects}")
                 
                 for obj in metadata["objects"]:
                     if obj["objectType"].lower() == target.lower() and obj.get("visible", True):
-                        print(f"[SEARCH] Found visible {target} in/on {object_type}")
+                        logging.info(f"[SEARCH] Found visible {target} in/on {object_type}")
                         return True  # 如果找到了，直接返回True
                 # 如果遍历完所有物体都没找到，输出信息并继续检查下一个位置
-                print(f"[SEARCH] Could not find visible {target} in/on {object_type}")
+                logging.info(f"[SEARCH] Could not find visible {target} in/on {object_type}")
 
         # 如果所有可能位置都检查完还没找到，输出最终信息并返回False
-        print(f"[SEARCH] Could not find visible {target} after checking all possible locations")
+        logging.warning(f"[SEARCH] Could not find visible {target} after checking all possible locations")
         return False
 
     def execute_decisions(self, taskname, decisions):
@@ -942,16 +1028,16 @@ class RobotController:
             action = decision["action"].lower()
             object_type = decision["objectType"]
             decisionmaking = decision["decisionmaking"]
-            print(f"[EXECUTE] {decisionmaking}")
+            logging.info(f"[EXECUTE] {decisionmaking}")
 
             # 1. 搜索类动作
             if action in ["search", "find"]:
                 found = self.search_for_object(taskname=taskname,
                                            target=object_type,
-                                           max_num=3,
+                                           max_num=5,
                                            qa_history=qa_history)
                 if not found:
-                    print(f"[ERROR] Search failed for {object_type}, stopping execution.")
+                    logging.error(f"[ERROR] Search failed for {object_type}, stopping execution.")
                     break
                 continue
 
@@ -962,7 +1048,7 @@ class RobotController:
                     self.navigate_to_object(object_id)
                     self.update_metadata()
                 else:
-                    print(f"[WARNING] Cannot navigate to {object_type}, as it is not in the navigable list.")
+                    logging.warning(f"[WARNING] Cannot navigate to {object_type}, as it is not in the navigable list.")
                 continue
 
             # 3. 交互类动作
@@ -978,7 +1064,7 @@ class RobotController:
 
                 # 3.2 如果物体不可见，则报错并停止
                 if not object_id:
-                    print(f"[ERROR] Cannot interact with {object_type} as it is not visible. Please use 'search' first.")
+                    logging.error(f"[ERROR] Cannot interact with {object_type} as it is not visible. Please use 'search' first.")
                     break
 
                 # 3.3 执行交互动作
@@ -986,33 +1072,78 @@ class RobotController:
                 if meta_obj and hasattr(self, "rocAgent"):
                     # 检查动作是否支持
                     if action in ["open", "close"] and not meta_obj.get("openable", False):
-                        print(f"[ERROR] {object_type} is not openable, stopping execution.")
+                        logging.error(f"[ERROR] {object_type} is not openable, stopping execution.")
                         break
                     elif action in ["pickup", "pick up", "pick_up"] and not meta_obj.get("pickupable", False):
-                        print(f"[ERROR] {object_type} is not pickupable, stopping execution.")
+                        logging.error(f"[ERROR] {object_type} is not pickupable, stopping execution.")
                         break
 
-                    success = self.rocAgent.interact(meta_obj, action)
-                    if not success:
-                        print(f"[ERROR] Action {action} failed, stopping execution.")
+                    self.rocAgent.interact(meta_obj, action)
+                    # Check controller's last action success instead of relying on return value
+                    if not self.controller.last_event.metadata.get("lastActionSuccess", False):
+                        logging.error(f"[ERROR] Action {action} failed, stopping execution.")
                         break
                     self.update_metadata()
                 else:
-                    print(f"[ERROR] Failed to get metadata for {object_type}, stopping execution.")
+                    logging.error(f"[ERROR] Failed to get metadata for {object_type}, stopping execution.")
+                    break
+
+            # 4. Put 动作 - 需要特殊处理，因为涉及两个物体
+            elif action == "put":
+                # 4.1 检查是否有物体被拾取
+                held_object = None
+                metadata = self.update_metadata()
+                if metadata and "objects" in metadata:
+                    for obj in metadata["objects"]:
+                        if obj.get("isPickedUp", False):
+                            held_object = obj
+                            break
+                
+                if not held_object:
+                    logging.error(f"[ERROR] Cannot put object - no object is currently held.")
+                    break
+                
+                # 4.2 获取目标容器/位置
+                target_object_id = None
+                target_object_type = decision.get("targetObject", object_type)  # 使用targetObject或fallback到objectType
+                
+                if metadata and "objects" in metadata:
+                    for obj in metadata["objects"]:
+                        if obj["objectType"].lower() == target_object_type.lower() and obj.get("visible", True):
+                            # 检查是否是receptacle或可放置的表面
+                            if obj.get("receptacle", False) or obj["objectType"].lower() in ["table", "countertop", "plate", "bowl"]:
+                                target_object_id = obj["objectId"]
+                                break
+                
+                if not target_object_id:
+                    logging.error(f"[ERROR] Cannot find receptacle {target_object_type} to put object on/in.")
+                    break
+                
+                # 4.3 导航到目标位置
+                self.navigate_to_object(target_object_id)
+                self.update_metadata()
+                
+                # 4.4 执行put动作
+                target_meta_obj = next((obj for obj in self.metadata["objects"] if obj["objectId"] == target_object_id), None)
+                if target_meta_obj and hasattr(self, "rocAgent"):
+                    logging.info(f"[EXECUTE] Putting {held_object['objectType']} on/in {target_meta_obj['objectType']}")
+                    self.rocAgent.interact(target_meta_obj, "put")
+                    
+                    # Check controller's last action success
+                    if not self.controller.last_event.metadata.get("lastActionSuccess", False):
+                        logging.error(f"[ERROR] Put action failed, stopping execution.")
+                        break
+                    self.update_metadata()
+                else:
+                    logging.error(f"[ERROR] Failed to get target object metadata for put action.")
                     break
 
             # 4. 未知动作
             else:
-                print(f"[SKIP] Action {action} not recognized for auto-execution.")
+                logging.warning(f"[SKIP] Action {action} not recognized for auto-execution.")
 
 
 if __name__=="__main__":
-    import logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[logging.StreamHandler()]
-    )
     env="taskgenerate"
     model = "qwen2.5vl:32b" # use gpt-4o to generate trajectories
     # you can set timeout for AI2THOR init here.        
@@ -1022,6 +1153,13 @@ if __name__=="__main__":
     room_type = ['kitchens','living_rooms','bedrooms','bathrooms']
     room = 'kitchens'
     scene = 'FloorPlan3'
+    
+    # 设置日志配置，保存到文件
+    import os
+    log_dir = f"logs/{scene}_{tasktype}"
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = f"{log_dir}/robot_execution_{scene}.log"
+    setup_logging(log_file)
     
     # 创建场景管理器
     scene_manager = SceneManager()
@@ -1054,11 +1192,47 @@ if __name__=="__main__":
         scene_diagonal = scene_manager.calculate_scene_diagonal(metadata)
         
         max_retries=2
-        error_paths = []  
+        error_paths = []
+        
+        # 只初始化一次场景，在所有attempt中复用
+        controller, metadata = scene_manager.run_initial_scene(scene_diagonal, origin_pos_path, scene)
+        
         for attempt in range(max_retries + 1): 
             try:
-                # 使用场景管理器初始化场景
-                controller, metadata = scene_manager.run_initial_scene(scene_diagonal, origin_pos_path, scene)
+                # 每次attempt开始时都重置机器人到初始位置，确保状态一致性
+                logging.info(f"[ATTEMPT {attempt + 1}/{max_retries + 1}] Starting task attempt")
+                
+                # 重置到初始位置
+                pos = load_json(origin_pos_path)
+                position = pos["position"]
+                rotation = pos["rotation"]  
+                horizon = pos["cameraHorizon"]   
+                
+                # 执行位置重置
+                reset_result = controller.step(
+                    action="Teleport",
+                    position=position,
+                    rotation=rotation,
+                    horizon=horizon,
+                    standing=True
+                )
+                
+                if not reset_result.metadata["lastActionSuccess"]:
+                    logging.warning(f"[RESET] Failed to reset robot position on attempt {attempt + 1}")
+                else:
+                    logging.info(f"[RESET] Successfully reset robot to initial position: {position}")
+                
+                # 确保机器人处于站立状态
+                controller.step(action="Stand")
+                
+                # 更新metadata
+                metadata = controller.last_event.metadata
+                
+                # 如果有物体被拿着，放下它们
+                for obj in metadata["objects"]:
+                    if obj["isPickedUp"]:
+                        logging.info(f"[RESET] Dropping held object: {obj['objectId']}")
+                        controller.step(action="DropHandObject", forceAction=True)
 
                 # 封装后的机器人控制器
                 robot_controller = RobotController(controller, metadata, model, origin_path)
@@ -1087,8 +1261,8 @@ if __name__=="__main__":
                     logging.info("[RE-PLANNING BASED ON USER RESPONSE]")
                     # 先判断是否需要replan
                     need_replan, reason = robot_controller.user_response_handler.init_response(user_response)
-                    print('REPLAN?:', need_replan)
-                    print('Reason: ', reason)
+                    logging.info('REPLAN?: %s', need_replan)
+                    logging.info('Reason: %s', reason)
                     if need_replan:
                         # old_subgoals = robot_controller.task_planner.subgoals
                         new_subtasks = robot_controller.task_planner.replan_subtasks_based_on_user_response(
@@ -1124,6 +1298,41 @@ if __name__=="__main__":
                 # decisions = subtasks
                 logging.info("[SUBTASKS WITH DECISION] %s", decisions)
                 robot_controller.execute_decisions(taskname, decisions)
+                
+                # 步骤5：验证任务是否成功完成
+                logging.info("[VERIFICATION] Starting task verification...")
+                is_success, reason, confidence = robot_controller.verify_task_completion(
+                    taskname=taskname,
+                    original_plan=subtasks
+                )
+                
+                if is_success:
+                    logging.info(f"[VERIFICATION] ✓ Task completed successfully! (Confidence: {confidence})")
+                    logging.info(f"[VERIFICATION] Reason: {reason}")
+                else:
+                    logging.warning(f"[VERIFICATION] ✗ Task may not be completed. (Confidence: {confidence})")
+                    logging.warning(f"[VERIFICATION] Reason: {reason}")
+                    
+                # 保存验证结果到元数据
+                verification_result = {
+                    "task": taskname,
+                    "success": is_success,
+                    "reason": reason,
+                    "confidence": confidence,
+                    "original_plan": subtasks
+                }
+                
+                # 创建验证结果文件
+                import json
+                verification_file = f"{origin_path}/verification_result.json"
+                with open(verification_file, 'w', encoding='utf-8') as f:
+                    json.dump(verification_result, f, ensure_ascii=False, indent=2)
+                logging.info(f"[VERIFICATION] Verification result saved to: {verification_file}")
+                
+                # 如果验证成功，退出重试循环
+                if is_success and confidence in ['high', 'medium']:
+                    logging.info("[VERIFICATION] Task completed successfully, exiting retry loop.")
+                    break
                 
                 # o1stylegenerate=O1StyleGenerate(
                 #     controller,scene,origin_path,metadata,task,model=model
