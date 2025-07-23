@@ -401,6 +401,87 @@ class TaskPlanner:
                 })
         return all_subtasks
 
+    def decompose_high_level_action(self, action, object_type, context=""):
+        """
+        将高级动作(如clean, cook, heat)分解为原子动作序列
+        
+        Args:
+            action: 高级动作名称 (如 "clean", "cook", "heat")
+            object_type: 目标物体类型
+            context: 额外上下文信息
+            
+        Returns:
+            list: 原子动作序列
+        """
+        # 定义哪些动作需要分解
+        high_level_actions = [
+            "clean", "cook", "heat", "cool", "freeze", "wash", "rinse", 
+            "prepare", "serve", "store", "organize", "arrange"
+        ]
+        
+        if action.lower() not in high_level_actions:
+            # 如果不是高级动作，返回原始动作
+            return [{
+                "action": action,
+                "objectType": object_type,
+                "targetObject": None,
+                "decisionmaking": f"{action} {object_type}"
+            }]
+        
+        # 准备支持的原子动作列表
+        supported_actions = [
+            "search", "navigate", "open", "close", "break", "cook", "slice", 
+            "toggle_on", "toggle_off", "dirty", "clean", "fill", "empty", 
+            "use_up", "pick_up", "put"
+        ]
+        
+        # 准备prompt变量
+        prompt_cfg = self.config.get("high_level_action_decomposition", {})
+        systext = prompt_cfg.get("systext", "")
+        usertext = prompt_cfg.get("usertext", "").format(
+            action=action,
+            object_type=object_type,
+            context=context,
+            supported_actions=", ".join(supported_actions)
+        )
+        
+        # 调用VLM获取分解结果
+        llmapi = VLMAPI(self.model)
+        result = llmapi.vlm_request(systext, usertext)
+        
+        # 解析VLM输出
+        import re
+        action_pattern = r'<Action\d+>(.*?)</Action\d+>'
+        matches = re.findall(action_pattern, result)
+        
+        # 转换为decisions格式
+        decisions = []
+        for match in matches:
+            parts = match.strip().split()
+            if not parts:
+                continue
+                
+            atomic_action = parts[0]
+            args = parts[1:]
+            
+            if atomic_action in supported_actions:
+                atomic_object_type = args[0] if len(args) > 0 else None
+                target_object = args[1] if len(args) > 1 else None
+                
+                decision = {
+                    "action": atomic_action,
+                    "objectType": atomic_object_type,
+                    "targetObject": target_object,
+                    "decisionmaking": " ".join(parts)
+                }
+                decisions.append(decision)
+        
+        logging.info(f"[DECOMPOSE] {action} {object_type} -> {len(decisions)} atomic actions")
+        for i, decision in enumerate(decisions, 1):
+            logging.info(f"  {i}. {decision['decisionmaking']}")
+            
+        return decisions
+
     def subtasks_to_decisions(self, subtasks):
         """
         将一组subtasks一次性转换为可执行的decisions序列。
@@ -417,7 +498,7 @@ class TaskPlanner:
 
         # 1. 准备支持的动作列表
         supported_actions = [
-            "search", "open", "close", "break", "cook", "slice", "toggle_on", "toggle_off",
+            "search", "navigate", "open", "close", "break", "cook", "slice", "toggle_on", "toggle_off",
             "dirty", "clean", "fill", "empty", "use_up", "pick_up", "put"
         ]
 
@@ -438,7 +519,7 @@ class TaskPlanner:
         task_pattern = r'<Task\d+>(.*?)</Task\d+>'
         matches = re.findall(task_pattern, result)
 
-        # 5. 转换为decisions格式并去重
+        # 5. 转换为decisions格式，并处理高级动作分解
         decisions = []
         seen_actions = set()  # 用于去重
         
@@ -449,11 +530,42 @@ class TaskPlanner:
 
             action = parts[0]
             args = parts[1:]
+            objectType = args[0] if len(args) > 0 else None
+            targetObject = args[1] if len(args) > 1 else None
 
-            if action in supported_actions:
-                objectType = args[0] if len(args) > 0 else None
-                targetObject = args[1] if len(args) > 1 else None
+            # 检查是否是高级动作，需要分解
+            high_level_actions = [
+                "clean", "cook", "heat", "cool", "freeze", "wash", "rinse", 
+                "prepare", "serve", "store", "organize", "arrange"
+            ]
+            
+            if action.lower() in high_level_actions:
+                # 分解高级动作为原子动作序列
+                logging.info(f"[HIGH-LEVEL] Decomposing {action} {objectType}")
+                context = f"Current subtasks: {subtasks}"
+                atomic_decisions = self.decompose_high_level_action(action, objectType, context)
                 
+                # 将分解后的原子动作添加到决策列表中（带去重）
+                for atomic_decision in atomic_decisions:
+                    atomic_action = atomic_decision["action"]
+                    atomic_objectType = atomic_decision["objectType"]
+                    atomic_targetObject = atomic_decision["targetObject"]
+                    
+                    # 创建去重键
+                    if atomic_action == "put":
+                        dedup_key = (atomic_action, atomic_objectType, atomic_targetObject)
+                    else:
+                        dedup_key = (atomic_action, atomic_objectType)
+                    
+                    # 检查是否重复
+                    if dedup_key not in seen_actions:
+                        decisions.append(atomic_decision)
+                        seen_actions.add(dedup_key)
+                    else:
+                        logging.debug(f"[DEDUP] Skipping duplicate atomic action: {atomic_decision['decisionmaking']}")
+            
+            elif action in supported_actions:
+                # 处理普通原子动作
                 # 创建去重键
                 if action == "put":
                     dedup_key = (action, objectType, targetObject)
@@ -472,6 +584,8 @@ class TaskPlanner:
                     seen_actions.add(dedup_key)
                 else:
                     logging.debug(f"[DEDUP] Skipping duplicate action: {' '.join(parts)}")
+            else:
+                logging.warning(f"[UNKNOWN] Action {action} not in supported actions list")
 
         logging.info(f"[DECISIONS] Generated {len(decisions)} unique actions from {len(matches)} total actions")
         return decisions
@@ -655,7 +769,7 @@ class UserResponseHandler:
         """模拟或实际获取用户回答。实际部署时可替换为input()或UI交互。"""
         # user_response = input("😁：请输入你的回答：")
         # 这里可替换为实际交互
-        user_response = 'please clean the tomato before put on the plate.'
+        user_response = 'you can do it by yourself.'
         return user_response
 
 
@@ -678,7 +792,9 @@ class RobotController:
         self.failed_attempts = 0
         self.last_question = None
         self.qa_history = []  # 专门记录问答历史
-        self.rocAgent=RocAgent(controller)  
+        self.rocAgent=RocAgent(controller)
+        self.recent_interactions = {}  # 记录最近交互的对象ID，格式: {object_type: object_id}
+        self.opened_containers_for_search = []  # 记录为搜索而打开的容器，需要在适当时机关闭  
 
 
     def add_memory(self, entry, memory_type):
@@ -986,12 +1102,25 @@ class RobotController:
             self.update_metadata()
 
             # 3.3 如果是可打开的容器且是关闭状态，则打开
+            container_opened_for_search = False
             if "objects" in self.metadata:
                 meta_obj = next((obj for obj in self.metadata["objects"] if obj["objectId"] == object_id), None)
                 if meta_obj and meta_obj.get("openable", False) and not meta_obj.get("isOpen", False):
-                    logging.info(f"[SEARCH] {object_type} is closed, opening...")
+                    logging.info(f"[SEARCH] {object_type} is closed, opening for search...")
                     if hasattr(self, "rocAgent"):
                         self.rocAgent.interact(meta_obj, "open")
+                        if self.controller.last_event.metadata.get("lastActionSuccess", False):
+                            # 记录这个容器是为搜索而打开的
+                            container_info = {
+                                "objectId": object_id,
+                                "objectType": object_type,
+                                "opened_for_target": target
+                            }
+                            self.opened_containers_for_search.append(container_info)
+                            container_opened_for_search = True
+                            logging.info(f"[SEARCH] Successfully opened {object_type} for searching {target}")
+                        else:
+                            logging.warning(f"[SEARCH] Failed to open {object_type}")
                         # 更新metadata以获取打开容器后的最新状态
                         self.update_metadata()
 
@@ -1006,13 +1135,71 @@ class RobotController:
                 for obj in metadata["objects"]:
                     if obj["objectType"].lower() == target.lower() and obj.get("visible", True):
                         logging.info(f"[SEARCH] Found visible {target} in/on {object_type}")
-                        return True  # 如果找到了，直接返回True
-                # 如果遍历完所有物体都没找到，输出信息并继续检查下一个位置
+                        return True  # 找到目标，保持容器打开状态供后续操作使用
+                # 如果遍历完所有物体都没找到，输出信息
                 logging.info(f"[SEARCH] Could not find visible {target} in/on {object_type}")
+                
+                # 如果在当前容器中没找到目标，且这个容器是为搜索而打开的，立即关闭它
+                if container_opened_for_search:
+                    self._close_container_immediately(container_info)
 
         # 如果所有可能位置都检查完还没找到，输出最终信息并返回False
         logging.warning(f"[SEARCH] Could not find visible {target} after checking all possible locations")
         return False
+
+    def _close_container_immediately(self, container_info):
+        """立即关闭指定的容器（搜索失败时使用）"""
+        try:
+            self.update_metadata()
+            if "objects" in self.metadata:
+                current_obj = next((obj for obj in self.metadata["objects"] if obj["objectId"] == container_info["objectId"]), None)
+                if current_obj and current_obj.get("isOpen", False):
+                    logging.info(f"[SEARCH] Closing {container_info['objectType']} immediately (target not found)")
+                    if hasattr(self, "rocAgent"):
+                        self.rocAgent.interact(current_obj, "close")
+                        if self.controller.last_event.metadata.get("lastActionSuccess", False):
+                            logging.info(f"[SEARCH] Successfully closed {container_info['objectType']}")
+                            # 从待关闭列表中移除
+                            if container_info in self.opened_containers_for_search:
+                                self.opened_containers_for_search.remove(container_info)
+                        else:
+                            logging.warning(f"[SEARCH] Failed to close {container_info['objectType']}")
+        except Exception as e:
+            logging.error(f"[SEARCH] Error closing {container_info['objectType']}: {e}")
+
+    def close_search_opened_containers(self):
+        """关闭所有为搜索而打开且仍然打开的容器（在相关操作完成后调用）"""
+        if not self.opened_containers_for_search:
+            return
+            
+        logging.info(f"[SEARCH CLEANUP] Closing {len(self.opened_containers_for_search)} containers that were opened for search")
+        containers_to_close = self.opened_containers_for_search.copy()
+        
+        for container_info in containers_to_close:
+            try:
+                self.update_metadata()
+                if "objects" in self.metadata:
+                    current_obj = next((obj for obj in self.metadata["objects"] if obj["objectId"] == container_info["objectId"]), None)
+                    if current_obj and current_obj.get("isOpen", False):
+                        logging.info(f"[SEARCH CLEANUP] Closing {container_info['objectType']} (ID: {container_info['objectId']})")
+                        if hasattr(self, "rocAgent"):
+                            self.rocAgent.interact(current_obj, "close")
+                            if self.controller.last_event.metadata.get("lastActionSuccess", False):
+                                logging.info(f"[SEARCH CLEANUP] Successfully closed {container_info['objectType']}")
+                            else:
+                                logging.warning(f"[SEARCH CLEANUP] Failed to close {container_info['objectType']}")
+                    else:
+                        logging.debug(f"[SEARCH CLEANUP] {container_info['objectType']} is already closed or not found")
+                        
+                # 无论成功还是失败，都从列表中移除
+                if container_info in self.opened_containers_for_search:
+                    self.opened_containers_for_search.remove(container_info)
+                    
+            except Exception as e:
+                logging.error(f"[SEARCH CLEANUP] Error closing {container_info['objectType']}: {e}")
+                
+        # 最后更新一次metadata
+        self.update_metadata()
 
     def execute_decisions(self, taskname, decisions):
         """
@@ -1042,7 +1229,7 @@ class RobotController:
                 continue
 
             # 2. 导航类动作
-            elif action in ["navigate to", "goto", "go to", "move to"]:
+            elif action in ["navigate", "navigate to", "goto", "go to", "move to"]:
                 object_id = next((item["objectId"] for item in navigable_list if item["objectType"].lower() == object_type.lower()), None)
                 if object_id:
                     self.navigate_to_object(object_id)
@@ -1052,15 +1239,87 @@ class RobotController:
                 continue
 
             # 3. 交互类动作
-            elif action in ["pickup", "pick up", "pick_up", "open", "close", "toggle"]:
+            elif action in ["pickup", "pick up", "pick_up", "open", "close", "toggle", "toggle_on", "toggle_off", 
+                           "clean", "dirty", "fill", "empty", "slice", "cook", "break", "use_up"]:
                 # 3.1 获取目标物体
                 object_id = None
                 metadata = self.update_metadata()
+                logging.info(f"[DEBUG] Looking for {object_type} to {action}")
+                
                 if metadata and "objects" in metadata:
+                    # 调试信息：显示所有可见对象
+                    visible_objects = [f"{obj['objectType']}({obj['objectId']})" for obj in metadata["objects"] if obj.get("visible", True)]
+                    logging.info(f"[DEBUG] Visible objects: {visible_objects}")
+                    
+                    # 智能对象选择：根据动作类型选择最合适的对象
+                    matching_objects = []
                     for obj in metadata["objects"]:
                         if obj["objectType"].lower() == object_type.lower() and obj.get("visible", True):
-                            object_id = obj["objectId"]
-                            break
+                            matching_objects.append(obj)
+                    
+                    if matching_objects:
+                        selected_obj = None
+                        
+                        # 首先检查是否有最近交互的对象，优先使用相同的对象
+                        recent_object_id = self.recent_interactions.get(object_type.lower())
+                        if recent_object_id:
+                            recent_obj = next((obj for obj in matching_objects if obj["objectId"] == recent_object_id), None)
+                            if recent_obj:
+                                logging.info(f"[DEBUG] Found recently interacted {object_type} (ID: {recent_object_id})")
+                                # 检查该对象是否适合当前动作
+                                if action == "open" and not recent_obj.get("isOpen", False):
+                                    selected_obj = recent_obj
+                                    logging.info(f"[DEBUG] Using recently interacted closed {object_type} for opening")
+                                elif action == "close" and recent_obj.get("isOpen", False):
+                                    selected_obj = recent_obj
+                                    logging.info(f"[DEBUG] Using recently interacted open {object_type} for closing")
+                                elif action not in ["open", "close"]:
+                                    selected_obj = recent_obj
+                                    logging.info(f"[DEBUG] Using recently interacted {object_type} for {action}")
+                        
+                        # 如果没有找到合适的最近交互对象，按照原来的逻辑选择
+                        if selected_obj is None:
+                            if action == "open":
+                                # 对于open动作，优先选择关闭的对象
+                                closed_objects = [obj for obj in matching_objects if not obj.get("isOpen", False)]
+                                if closed_objects:
+                                    selected_obj = closed_objects[0]  # 选择第一个关闭的对象
+                                    logging.info(f"[DEBUG] Selected closed {object_type} for opening (ID: {selected_obj['objectId']})")
+                                else:
+                                    selected_obj = matching_objects[0]  # 如果都是打开的，选择第一个
+                                    logging.info(f"[DEBUG] All {object_type} are already open, selected first one (ID: {selected_obj['objectId']})")
+                                    
+                            elif action == "close":
+                                # 对于close动作，检查是否有多个打开的对象
+                                open_objects = [obj for obj in matching_objects if obj.get("isOpen", False)]
+                                if len(open_objects) > 1:
+                                    # 如果有多个打开的对象，询问是否要关闭所有
+                                    logging.info(f"[DEBUG] Found {len(open_objects)} open {object_type} objects. Will close all of them.")
+                                    # 这里我们将处理所有打开的对象，而不仅仅是第一个
+                                    selected_obj = open_objects[0]  # 先选择第一个，后面会循环处理所有
+                                    logging.info(f"[DEBUG] Will close all {len(open_objects)} open {object_type} objects")
+                                elif len(open_objects) == 1:
+                                    selected_obj = open_objects[0]
+                                    logging.info(f"[DEBUG] Selected open {object_type} for closing (ID: {selected_obj['objectId']})")
+                                else:
+                                    selected_obj = matching_objects[0]  # 如果都是关闭的，选择第一个
+                                    logging.info(f"[DEBUG] All {object_type} are already closed, selected first one (ID: {selected_obj['objectId']})")
+                            else:
+                                # 对于其他动作，选择第一个匹配的对象
+                                selected_obj = matching_objects[0]
+                                logging.info(f"[DEBUG] Selected first matching {object_type} (ID: {selected_obj['objectId']})")
+                        
+                        object_id = selected_obj["objectId"]
+                        logging.info(f"[DEBUG] Final selected object: {selected_obj['objectType']} (ID: {object_id})")
+                        
+                        # 显示所有匹配对象的状态信息
+                        if action in ["open", "close"] and len(matching_objects) > 1:
+                            logging.info(f"[DEBUG] Found {len(matching_objects)} {object_type} objects:")
+                            for i, obj in enumerate(matching_objects):
+                                status = "SELECTED" if obj["objectId"] == object_id else "ignored"
+                                logging.info(f"[DEBUG]   {i+1}. ID: {obj['objectId']}, openable: {obj.get('openable', False)}, isOpen: {obj.get('isOpen', False)} ({status})")
+                    else:
+                        object_id = None
 
                 # 3.2 如果物体不可见，则报错并停止
                 if not object_id:
@@ -1072,17 +1331,37 @@ class RobotController:
                 if meta_obj and hasattr(self, "rocAgent"):
                     # 检查动作是否支持
                     if action in ["open", "close"] and not meta_obj.get("openable", False):
-                        logging.error(f"[ERROR] {object_type} is not openable, stopping execution.")
+                        logging.error(f"[ERROR] {object_type} is not openable (openable={meta_obj.get('openable', False)}), stopping execution.")
                         break
                     elif action in ["pickup", "pick up", "pick_up"] and not meta_obj.get("pickupable", False):
                         logging.error(f"[ERROR] {object_type} is not pickupable, stopping execution.")
                         break
 
+                    # 对于 close 动作，检查当前状态
+                    if action == "close":
+                        if not meta_obj.get("isOpen", False):
+                            logging.warning(f"[WARNING] {object_type} is already closed (isOpen={meta_obj.get('isOpen', False)})")
+                            # 继续执行，因为有时状态可能不准确
+                        else:
+                            logging.info(f"[INFO] Closing {object_type} (current state: isOpen={meta_obj.get('isOpen', True)})")
+
+                    logging.info(f"[EXECUTE] Executing {action} on {object_type} (ID: {object_id})")
                     self.rocAgent.interact(meta_obj, action)
+                    
                     # Check controller's last action success instead of relying on return value
                     if not self.controller.last_event.metadata.get("lastActionSuccess", False):
-                        logging.error(f"[ERROR] Action {action} failed, stopping execution.")
+                        error_message = self.controller.last_event.metadata.get("errorMessage", "Unknown error")
+                        logging.error(f"[ERROR] Action {action} failed on {object_type}. Error: {error_message}")
                         break
+                    else:
+                        logging.info(f"[SUCCESS] {action} on {object_type} completed successfully")
+                        # 记录成功交互的对象ID，以便后续操作使用相同对象
+                        self.recent_interactions[object_type.lower()] = object_id
+                        logging.info(f"[DEBUG] Recorded recent interaction: {object_type.lower()} -> {object_id}")
+                        
+                        # 如果是 pickup 动作成功，关闭为搜索而打开的容器
+                        if action in ["pickup", "pick up", "pick_up"]:
+                            self.close_search_opened_containers()
                     self.update_metadata()
                 else:
                     logging.error(f"[ERROR] Failed to get metadata for {object_type}, stopping execution.")
@@ -1111,7 +1390,12 @@ class RobotController:
                     for obj in metadata["objects"]:
                         if obj["objectType"].lower() == target_object_type.lower() and obj.get("visible", True):
                             # 检查是否是receptacle或可放置的表面
-                            if obj.get("receptacle", False) or obj["objectType"].lower() in ["table", "countertop", "plate", "bowl"]:
+                            receptacle_types = [
+                                "table", "countertop", "plate", "bowl", "cabinet", "drawer", "shelf", 
+                                "fridge", "microwave", "sink", "stove", "oven", "dishwasher", "trash",
+                                "box", "container", "basket", "bag", "cup", "mug", "pan", "pot"
+                            ]
+                            if obj.get("receptacle", False) or obj["objectType"].lower() in receptacle_types:
                                 target_object_id = obj["objectId"]
                                 break
                 
@@ -1123,6 +1407,18 @@ class RobotController:
                 self.navigate_to_object(target_object_id)
                 self.update_metadata()
                 
+                # 4.3.5 如果目标容器是可开关的且当前是关闭状态，先打开它
+                target_meta_obj = next((obj for obj in self.metadata["objects"] if obj["objectId"] == target_object_id), None)
+                if target_meta_obj and target_meta_obj.get("openable", False) and not target_meta_obj.get("isOpen", False):
+                    logging.info(f"[EXECUTE] Opening {target_meta_obj['objectType']} before putting object inside")
+                    self.rocAgent.interact(target_meta_obj, "open")
+                    if not self.controller.last_event.metadata.get("lastActionSuccess", False):
+                        logging.error(f"[ERROR] Failed to open {target_meta_obj['objectType']}, stopping execution.")
+                        break
+                    self.update_metadata()
+                    # Update target_meta_obj after opening
+                    target_meta_obj = next((obj for obj in self.metadata["objects"] if obj["objectId"] == target_object_id), None)
+                
                 # 4.4 执行put动作
                 target_meta_obj = next((obj for obj in self.metadata["objects"] if obj["objectId"] == target_object_id), None)
                 if target_meta_obj and hasattr(self, "rocAgent"):
@@ -1133,6 +1429,10 @@ class RobotController:
                     if not self.controller.last_event.metadata.get("lastActionSuccess", False):
                         logging.error(f"[ERROR] Put action failed, stopping execution.")
                         break
+                    else:
+                        logging.info(f"[SUCCESS] Put action completed successfully")
+                        # Put 动作成功后，关闭所有为搜索而打开的容器
+                        self.close_search_opened_containers()
                     self.update_metadata()
                 else:
                     logging.error(f"[ERROR] Failed to get target object metadata for put action.")
@@ -1168,25 +1468,24 @@ if __name__=="__main__":
     paths = scene_manager.get_scene_paths(env, room, scene, tasktype)
     metadata_path = paths['metadata_path']
     origin_pos_path = paths['origin_pos_path']
-    generate_task = paths['generate_task']
     
     logging.info("metadata_path: %s", metadata_path)
-    logging.info("task_metadata_path: %s", generate_task)
     
-    # 加载场景元数据和任务
+    # 加载场景元数据
     metadata = scene_manager.load_scene_metadata(metadata_path)
-    tasks = scene_manager.load_scene_tasks(generate_task)
-
-    for instruction_idx, task in enumerate(tasks, start=0):                                                            
+    
+    # 直接指定taskname参数，不需要读取JSON
+    taskname = "put tomato in the cabinet"  # 直接指定任务名称
+    
+    for instruction_idx in range(1):  # 只处理一个任务                                                           
         logging.info("\n\n*********************************************************************")
         logging.info(f"Scene:{scene} Task_Type: {tasktype} Processing_Task: {instruction_idx}")
         logging.info("*********************************************************************\n")
 
-        task=tasks[instruction_idx]
-        logging.info("task: %s", task)
+        logging.info("taskname: %s", taskname)
         
         start_time = time.time()
-        origin_path=f"data/data_{task['tasktype']}/{scene}_{task['tasktype']}_{instruction_idx}"
+        origin_path=f"data/data_{tasktype}/{scene}_{tasktype}_{instruction_idx}"
         
         # 计算场景对角线距离
         scene_diagonal = scene_manager.calculate_scene_diagonal(metadata)
@@ -1245,7 +1544,7 @@ if __name__=="__main__":
                 logging.info("[OBSERVATION] %s", observation)
                 
                 # 步骤3：高层任务规划（只用高层taskname和observation）
-                taskname = task["taskname"]  # 例如 "把苹果放进冰箱"
+                # taskname已经在上面直接指定了，不需要从task对象中提取
                 subtasks = robot_controller.plan_high_level_tasks(taskname, observation)
                 logging.info("[INITIAL TASK PLANNING] %s", str(subtasks))
                 
