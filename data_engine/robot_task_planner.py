@@ -15,8 +15,19 @@ from utils import save_data_to_json,save_image,clear_folder,load_json,get_volume
 from baseAction import BaseAction
 from RocAgent import RocAgent       
 import json
-import functools
 import logging
+
+
+def get_data_engine_path():
+    """获取data_engine目录的绝对路径"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    return script_dir
+
+
+def get_project_root():
+    """获取项目根目录的绝对路径"""
+    data_engine_path = get_data_engine_path()
+    return os.path.dirname(data_engine_path)
 
 
 # 设置日志配置
@@ -34,27 +45,49 @@ def setup_logging(log_file=None):
     )
 
 
-def load_prompt_config(config_path="config/prompt_config.json"):
-    """加载 prompt 配置文件"""
+def load_config_file(config_path, default_value=None, fallback_to_root=False):
+    """通用配置文件加载函数"""
+    if default_value is None:
+        default_value = {}
+    
+    if not os.path.isabs(config_path):
+        # 首先尝试data_engine目录下的config
+        config_path_data_engine = os.path.join(get_data_engine_path(), config_path)
+        if os.path.exists(config_path_data_engine):
+            config_path = config_path_data_engine
+        elif fallback_to_root:
+            # 如果不存在且允许回退，尝试项目根目录下的config
+            config_path = os.path.join(get_project_root(), config_path)
+        else:
+            config_path = config_path_data_engine
+    
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
         logging.warning(f"Config file {config_path} not found, using default config")
-        return 
+        return default_value
+
+
+def load_prompt_config(config_path="config/prompt_config.json"):
+    """加载 prompt 配置文件"""
+    return load_config_file(config_path, default_value={})
+
 
 def load_scene_config(config_path="config/scene_config.json"):
     """加载场景配置文件"""
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        logging.warning(f"Scene config file {config_path} not found, using default config")
-        return {}
+    return load_config_file(config_path, default_value={}, fallback_to_root=True)
 
 # 默认配置
 PROMPT_CONFIG = load_prompt_config()
 SCENE_CONFIG = load_scene_config()
+
+
+def parse_xml_tags(text, tag_name):
+    """通用的XML标签解析函数"""
+    pattern = f'<{tag_name}(\\d+)>(.*?)</{tag_name}\\1>'
+    matches = re.findall(pattern, text, re.DOTALL)
+    return [(int(num), content.strip()) for num, content in matches]
 
 
 class SceneManager:
@@ -69,9 +102,11 @@ class SceneManager:
 
     def get_scene_paths(self, env, room, scene, tasktype):
         """生成场景相关的路径"""
-        metadata_path = f"data_engine/{env}/{room}/{scene}/metadata.json"
-        origin_pos_path = f"data_engine/{env}/{room}/{scene}/originPos.json"
-        generate_task = f"data_engine/{tasktype}_task_metadata/{scene}.json"
+        data_engine_path = get_data_engine_path()
+        # env 参数实际上是 "taskgenerate"，但目录结构是 taskgenerate/{room}/{scene}
+        metadata_path = os.path.join(data_engine_path, f"taskgenerate/{room}/{scene}/metadata.json")
+        origin_pos_path = os.path.join(data_engine_path, f"taskgenerate/{room}/{scene}/originPos.json")
+        generate_task = os.path.join(data_engine_path, f"{tasktype}_task_metadata/{scene}.json")
         
         return {
             'metadata_path': metadata_path,
@@ -87,17 +122,8 @@ class SceneManager:
         room_config = self.room_configs[room]
         floorplans = room_config.get("floorplans", [])
         
-        # 生成FloorPlan名称
-        if room == 'kitchens':
-            return [f"FloorPlan{i}" for i in floorplans]
-        elif room == 'living_rooms':
-            return [f"FloorPlan{i}" for i in floorplans]
-        elif room == 'bedrooms':
-            return [f"FloorPlan{i}" for i in floorplans]
-        elif room == 'bathrooms':
-            return [f"FloorPlan{i}" for i in floorplans]
-        else:
-            return []
+        # 生成FloorPlan名称 - 所有房间类型都使用相同逻辑
+        return [f"FloorPlan{i}" for i in floorplans]
 
     def calculate_scene_diagonal(self, metadata):
         """计算场景对角线距离"""
@@ -185,6 +211,32 @@ class SceneManager:
         """加载场景任务"""
         tasks = load_json(generate_task)
         return tasks[0] if tasks else []
+        
+    def _get_absolute_path(self, path):
+        """获取绝对路径的工具函数"""
+        if not os.path.isabs(path):
+            return os.path.join(get_data_engine_path(), path)
+        return path
+
+    def load_test_tasks(self, test_tasks_path="test_tasks.json"):
+        """加载测试任务配置文件"""
+        test_tasks_path = self._get_absolute_path(test_tasks_path)
+        try:
+            tasks = load_json(test_tasks_path)
+            logging.info(f"Loaded {len(tasks)} test tasks from {test_tasks_path}")
+            return tasks
+        except Exception as e:
+            logging.error(f"Failed to load test tasks from {test_tasks_path}: {e}")
+            return []
+            
+    def get_test_task_by_id(self, task_id, test_tasks_path="test_tasks.json"):
+        """根据ID获取指定的测试任务"""
+        tasks = self.load_test_tasks(test_tasks_path)
+        for task in tasks:
+            if task.get('id') == task_id:
+                return task
+        logging.error(f"Test task with ID '{task_id}' not found")
+        return None
 
 
 
@@ -210,11 +262,9 @@ class TaskPlanner:
         )
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
-        # 解析 <SubgoalN> 标签，支持“子目标: 描述”格式
-        import re
-        subgoal_pattern = r'<Subgoal\d+>(.*?)</Subgoal\d+>'
-        matches = re.findall(subgoal_pattern, result, re.DOTALL)
-        subgoals = [m.strip() for m in matches]
+        # 解析 <SubgoalN> 标签，支持"子目标: 描述"格式
+        matches = parse_xml_tags(result, "Subgoal")
+        subgoals = [content for _, content in matches]
         self.subgoals = subgoals
         return subgoals
 
@@ -229,9 +279,8 @@ class TaskPlanner:
         )
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
-        import re
-        subtask_pattern = r'<Subtask\d+>(.*?)</Subtask\d+>'
-        subtasks = [m.strip() for m in re.findall(subtask_pattern, result, re.DOTALL)]
+        matches = parse_xml_tags(result, "Subtask")
+        subtasks = [content for _, content in matches]
         self.subtasks = subtasks
         return subtasks
 
@@ -260,13 +309,11 @@ class TaskPlanner:
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
         
-        import re
-        subtask_pattern = r'<Subtask\d+>(.*?)</Subtask\d+>'
-        matches = re.findall(subtask_pattern, result)
+        matches = parse_xml_tags(result, "Subtask")
         
         subtasks = []
-        for match in matches:
-            parts = match.strip().split()
+        for _, content in matches:
+            parts = content.strip().split()
             if not parts:
                 continue
             
@@ -304,10 +351,8 @@ class TaskPlanner:
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
         # 复用高层subgoal的正则解析
-        import re
-        subgoal_pattern = r'<Subgoal\d+>(.*?)</Subgoal\d+>'
-        matches = re.findall(subgoal_pattern, result, re.DOTALL)
-        subgoals = [m.strip() for m in matches]
+        matches = parse_xml_tags(result, "Subgoal")
+        subgoals = [content for _, content in matches]
         self.subgoals = subgoals  # 更新成员变量
         return subgoals
 
@@ -327,9 +372,8 @@ class TaskPlanner:
         )
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
-        import re
-        subgoal_pattern = r'<Subgoal\d+>(.*?)</Subgoal\d+>'
-        new_subgoals = [m.strip() for m in re.findall(subgoal_pattern, result, re.DOTALL)]
+        matches = parse_xml_tags(result, "Subgoal")
+        new_subgoals = [content for _, content in matches]
         self.subgoals = new_subgoals
         return new_subgoals
 
@@ -353,9 +397,8 @@ class TaskPlanner:
         )
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
-        import re
-        subtask_pattern = r'<Subtask\d+>(.*?)</Subtask\d+>'
-        new_subtasks = [m.strip() for m in re.findall(subtask_pattern, result, re.DOTALL)]
+        matches = parse_xml_tags(result, "Subtask")
+        new_subtasks = [content for _, content in matches]
         self.subtasks = new_subtasks
         return new_subtasks
 
@@ -450,14 +493,12 @@ class TaskPlanner:
         result = llmapi.vlm_request(systext, usertext)
         
         # 解析VLM输出
-        import re
-        action_pattern = r'<Action\d+>(.*?)</Action\d+>'
-        matches = re.findall(action_pattern, result)
+        matches = parse_xml_tags(result, "Action")
         
         # 转换为decisions格式
         decisions = []
-        for match in matches:
-            parts = match.strip().split()
+        for _, content in matches:
+            parts = content.strip().split()
             if not parts:
                 continue
                 
@@ -515,16 +556,14 @@ class TaskPlanner:
         result = llmapi.vlm_request(systext, usertext)
 
         # 4. 解析VLM输出
-        import re
-        task_pattern = r'<Task\d+>(.*?)</Task\d+>'
-        matches = re.findall(task_pattern, result)
+        matches = parse_xml_tags(result, "Task")
 
         # 5. 转换为decisions格式，并处理高级动作分解
         decisions = []
         seen_actions = set()  # 用于去重
         
-        for match in matches:
-            parts = match.strip().split()
+        for _, content in matches:
+            parts = content.strip().split()
             if not parts:
                 continue
 
@@ -674,7 +713,6 @@ class QuestionGenerator:
         usertext = usertext.format(taskname=taskname, subgoals=subgoals_str, observation=observation or "")
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
-        import re
         m = re.search(r'QUESTION:\s*(.*)', result)
         question = m.group(1).strip() if m else result.strip()
         return question
@@ -738,7 +776,6 @@ class UserResponseHandler:
         )
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
-        import re
         def parse_replan_result(result):
             # 1. 先找所有 REPLAN: yes/no（允许前后有空格、大小写、换行）
             matches = re.findall(r'REPLAN\s*:\s*(yes|no)', result, re.IGNORECASE)
@@ -767,9 +804,9 @@ class UserResponseHandler:
 
     def get_user_response(self, question):
         """模拟或实际获取用户回答。实际部署时可替换为input()或UI交互。"""
-        # user_response = input("😁：请输入你的回答：")
+        user_response = input("😁：请输入你的回答：")
         # 这里可替换为实际交互
-        user_response = 'you can do it by yourself.'
+        # user_response = 'cut tomato before put on the plate.'
         return user_response
 
 
@@ -947,7 +984,6 @@ class RobotController:
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
         
-        import re
         import ast
         cleaned_result = result.strip()
         # 移除 markdown 代码块
@@ -1007,7 +1043,6 @@ class RobotController:
             result = llmapi.vlm_request(systext, usertext, image_path)
             
             # 解析VLM返回结果
-            import re
             success_match = re.search(r'SUCCESS:\s*(yes|no)', result, re.IGNORECASE)
             reason_match = re.search(r'REASON:\s*(.*?)(?=\nCONFIDENCE:|$)', result, re.DOTALL)
             confidence_match = re.search(r'CONFIDENCE:\s*(high|medium|low)', result, re.IGNORECASE)
@@ -1444,21 +1479,50 @@ class RobotController:
 
 
 if __name__=="__main__":
+    """
+    Robot Task Planner Main Program
+    
+    测试任务配置说明：
+    1. USE_TEST_TASKS = True: 使用 test_tasks.json 中的测试任务
+       USE_TEST_TASKS = False: 使用手动指定的任务（见 manual_task）
+    
+    2. 当 USE_TEST_TASKS = True 时：
+       - RUN_ALL_TEST_TASKS = True: 依次运行所有测试任务
+       - RUN_ALL_TEST_TASKS = False: 运行 TEST_TASK_ID 指定的单个任务
+    
+    3. 可用的测试任务 ID（见 test_tasks.json）：
+       test_001: put tomato on plate
+       test_002: put apple in cabinet  
+       test_003: put bread in fridge
+       test_004: clean tomato and put on plate
+       test_005: put knife in drawer
+       ... 等等
+    
+    使用示例：
+    - 运行单个测试任务: USE_TEST_TASKS=True, TEST_TASK_ID="test_001", RUN_ALL_TEST_TASKS=False
+    - 运行所有测试任务: USE_TEST_TASKS=True, RUN_ALL_TEST_TASKS=True
+    - 使用手动任务: USE_TEST_TASKS=False
+    """
+    
     env="taskgenerate"
     model = "qwen2.5vl:32b" # use gpt-4o to generate trajectories
     # you can set timeout for AI2THOR init here.        
 
     ###### step1. choose the task type here ####################
     tasktype="pickup_and_put"
-    room_type = ['kitchens','living_rooms','bedrooms','bathrooms']
     room = 'kitchens'
     scene = 'FloorPlan3'
     
+    # 测试任务配置
+    USE_TEST_TASKS = True  # 设为 True 使用测试任务，False 使用手动指定的任务
+    TEST_TASK_ID = "test_001"  # 指定要运行的测试任务ID
+    RUN_ALL_TEST_TASKS = False  # 设为 True 运行所有测试任务
+    
     # 设置日志配置，保存到文件
     import os
-    log_dir = f"logs/{scene}_{tasktype}"
-    os.makedirs(log_dir, exist_ok=True)
-    log_file = f"{log_dir}/robot_execution_{scene}.log"
+    data_engine_log_dir = os.path.join(get_data_engine_path(), f"logs/{scene}_{tasktype}")
+    os.makedirs(data_engine_log_dir, exist_ok=True)
+    log_file = os.path.join(data_engine_log_dir, f"robot_execution_{scene}.log")
     setup_logging(log_file)
     
     # 创建场景管理器
@@ -1474,18 +1538,55 @@ if __name__=="__main__":
     # 加载场景元数据
     metadata = scene_manager.load_scene_metadata(metadata_path)
     
-    # 直接指定taskname参数，不需要读取JSON
-    taskname = "put tomato in the cabinet"  # 直接指定任务名称
+    # 根据配置选择任务来源
+    logging.info(f"Task configuration - USE_TEST_TASKS: {USE_TEST_TASKS}, TEST_TASK_ID: {TEST_TASK_ID}, RUN_ALL_TEST_TASKS: {RUN_ALL_TEST_TASKS}")
     
-    for instruction_idx in range(1):  # 只处理一个任务                                                           
+    if USE_TEST_TASKS:
+        if RUN_ALL_TEST_TASKS:
+            # 运行所有测试任务
+            test_tasks = scene_manager.load_test_tasks()
+            logging.info(f"Will run all {len(test_tasks)} test tasks")
+        elif TEST_TASK_ID:
+            # 运行指定的测试任务
+            logging.info(f"Looking for test task: {TEST_TASK_ID}")
+            test_task = scene_manager.get_test_task_by_id(TEST_TASK_ID)
+            logging.info(f"Test task search result: {test_task is not None}")
+            if test_task:
+                test_tasks = [test_task]
+                logging.info(f"Will run test task: {TEST_TASK_ID}")
+            else:
+                logging.error(f"Test task {TEST_TASK_ID} not found, exiting")
+                exit(1)
+        else:
+            logging.error("USE_TEST_TASKS is True but no task specified")
+            exit(1)
+    else:
+        # 使用手动指定的任务
+        manual_task = {
+            "id": "manual_task",
+            "taskname": "put tomato on the plate",  # 手动指定任务名称
+            "description": "Manually specified task",
+            "scene": scene,
+            "room": room,
+            "tasktype": tasktype
+        }
+        test_tasks = [manual_task]
+        logging.info("Using manually specified task")
+    
+    # 执行任务
+    for task_idx, task in enumerate(test_tasks):
+        taskname = task["taskname"]
+        task_id = task.get("id", f"task_{task_idx}")
+        
         logging.info("\n\n*********************************************************************")
-        logging.info(f"Scene:{scene} Task_Type: {tasktype} Processing_Task: {instruction_idx}")
+        logging.info(f"Running Task ID: {task_id}")
+        logging.info(f"Scene:{scene} Task_Type: {tasktype} Task: {taskname}")
         logging.info("*********************************************************************\n")
 
         logging.info("taskname: %s", taskname)
         
         start_time = time.time()
-        origin_path=f"data/data_{tasktype}/{scene}_{tasktype}_{instruction_idx}"
+        origin_path = os.path.join(get_data_engine_path(), f"data/data_{tasktype}/{scene}_{tasktype}_{task_idx}")
         
         # 计算场景对角线距离
         scene_diagonal = scene_manager.calculate_scene_diagonal(metadata)
@@ -1576,21 +1677,6 @@ if __name__=="__main__":
                     else:
                         logging.info("[NO REPLAN NEEDED] Reason: %s", reason)
 
-                
-                # # 步骤4：底层任务规划：把subgoals细化为可执行subtasks，并生成decisionmaking
-                # # 遍历 subgoals
-                # #   把 subgoal 转化成可以执行决策decisionmaking，即机器人的 actions（包含find, navigate, interact等）
-                # #       遍历 actions
-                # #       Execute：执行action
-                # #       确认是否完成（通过截图+VLM）
-                # decision = robot_controller.task_planner.subgoals_to_subtasks(subtasks)
-                # logging.info("[SUBTASKS WITH DECISION] %s", decision)
-                # robot_controller.execute_subtasks(decision)
-                # # 可选：每步执行后插入“确认是否完成”逻辑（如通过截图+VLM判断）
-                # # for subtask in subtasks_with_decision:
-                # #     # ...执行action后...
-                # #     # result = robot_controller.check_completion_via_vlm(...)
-                # #     # if result: break
 
                 # 步骤4：底层任务规划：把subtask细化为可执的 decisions
                 decisions = robot_controller.task_planner.subtasks_to_decisions(subtasks)
@@ -1632,40 +1718,6 @@ if __name__=="__main__":
                 if is_success and confidence in ['high', 'medium']:
                     logging.info("[VERIFICATION] Task completed successfully, exiting retry loop.")
                     break
-                
-                # o1stylegenerate=O1StyleGenerate(
-                #     controller,scene,origin_path,metadata,task,model=model
-                # )
-                # o1stylegenerate.initial_navigable_list()
-                
-                # # json_path=f"{origin_path}/metadata/0_metadata.json"
-                # # o1stylegenerate.generate_o1style_data["round_metadata"].append(json_path)
-                # # save_data_to_json(o1stylegenerate.metadata,json_path)
-                # # o1stylegenerate.generate_o1style_data["round_navigable_list"].append(o1stylegenerate.navigable_list)
-
-                
-                # o1stylegenerate.generate_o1style_data["task_metadata"]=task
-                
-                # o1stylegenerate.generate_o1style_data["scene"]=scene
-                # o1stylegenerate.generate_o1style_data["tasktype"]=tasktype 
-                # o1stylegenerate.generate_o1style_data["instruction_idx"]=instruction_idx
-                
-                # o1stylegenerate.generate_one_o1style_data(plan_num,correct_num)
-                
-                # end_time = time.time()
-
-                # execution_time = end_time - start_time
-                # print(f"Execution time: {execution_time:.4f} seconds") 
-                
-                # o1stylegenerate.generate_o1style_data["time"]=execution_time
-
-                # path=f"{origin_path}/{scene}_{task['tasktype']}_{instruction_idx}_{trajectory_idx}.json"
-                
-                # save_data_to_json(o1stylegenerate.generate_o1style_data,path)
-                # print("generate_o1style_data save:",{path})
-                
-                # controller.stop()
-                # break
 
             except Exception as e:
                 logging.error("[ERROR] %s, try again.", e)
@@ -1675,4 +1727,12 @@ if __name__=="__main__":
                     logging.warning("[RETRY %d TIMES, JUMP THE TASK]", max_retries)
                     error_paths.append(origin_path)  
                     save_data_to_json(error_paths,"./wrong_generte_path_list.json")
-                    continue
+                    break  # Exit the retry loop for this task
+        
+        # Stop the controller after all attempts for this task
+        controller.stop()
+        logging.info(f"[TASK COMPLETE] Finished task {task_id}: {taskname}")
+    
+    # All tasks completed
+    logging.info("All tasks completed successfully!")
+    logging.info(f"Error paths saved to: ./wrong_generte_path_list.json")

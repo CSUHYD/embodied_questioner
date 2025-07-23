@@ -3,6 +3,12 @@ import os
 
 from utils import save_data_to_json,get_scene_metadata,load_json
 
+
+def get_data_engine_path():
+    """获取data_engine目录的绝对路径"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    return script_dir
+
 class TaskGenerate:
     def __init__(
         self,
@@ -611,7 +617,7 @@ class TaskGenerate:
         objects=metadata["objects"]
         generate_task=[]
         for_obj_select_can_put={} 
-        select_can_put=load_json('taskgenerate/pick_up_and_put.json')
+        select_can_put=load_json(os.path.join(get_data_engine_path(), 'taskgenerate/pick_up_and_put.json'))
         unique_objects,unique_type_list=self.delete_re_object()
         
         for obj_list in select_can_put: 
@@ -799,7 +805,7 @@ class TaskGenerate:
         objects=metadata["objects"]
         generate_task=[]
         for_obj_select_can_put={} 
-        select_can_put=load_json('taskgenerate/pick_up_and_put.json')
+        select_can_put=load_json(os.path.join(get_data_engine_path(), 'taskgenerate/pick_up_and_put.json'))
         unique_objects,unique_type_list=self.delete_re_object()
         
         for obj_list in select_can_put: 
@@ -999,7 +1005,7 @@ class TaskGenerate:
         objects=metadata["objects"]
         generate_task=[]
         for_obj_select_can_put={} 
-        select_can_put=load_json('taskgenerate/pick_up_and_put.json')
+        select_can_put=load_json(os.path.join(get_data_engine_path(), 'taskgenerate/pick_up_and_put.json'))
         unique_objects,unique_type_list=self.delete_re_object()
         
         for obj_list in select_can_put:
@@ -1199,7 +1205,7 @@ class TaskGenerate:
         objects=metadata["objects"]
         generate_task=[]
         for_obj_select_can_put={} 
-        select_can_put=load_json('taskgenerate/pick_up_and_put.json')
+        select_can_put=load_json(os.path.join(get_data_engine_path(), 'taskgenerate/pick_up_and_put.json'))
         unique_objects,unique_type_list=self.delete_re_object()
         
         for obj_list in select_can_put: 

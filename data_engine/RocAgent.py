@@ -146,11 +146,11 @@ class RocAgent(BaseAgent):
             self.action.action_mapping["open"](self.controller, object_id)
         elif interact_type == "close":
             self.action.action_mapping["close"](self.controller, object_id)
-        elif interact_type == "break_":
+        elif interact_type == "break":
             self.action.action_mapping["break_"](self.controller, object_id)
         elif interact_type == "cook":
             self.action.action_mapping["cook"](self.controller, object_id)
-        elif interact_type == "slice_":
+        elif interact_type == "slice":
             self.action.action_mapping["slice_"](self.controller, object_id)
         elif interact_type == "toggle_on":
             self.action.action_mapping["toggle_on"](self.controller, object_id)

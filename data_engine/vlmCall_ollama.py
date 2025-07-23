@@ -11,8 +11,23 @@ import json
 import requests
 import logging
 
+
+def get_data_engine_path():
+    """获取data_engine目录的绝对路径"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    return script_dir
+
+
+def get_project_root():
+    """获取项目根目录的绝对路径"""
+    data_engine_path = get_data_engine_path()
+    return os.path.dirname(data_engine_path)
+
+
 def load_prompt_config(config_path="config/prompt_config.json"):
     """加载 prompt 配置文件"""
+    if not os.path.isabs(config_path):
+        config_path = os.path.join(get_data_engine_path(), config_path)
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -190,7 +205,7 @@ if __name__ == "__main__":
     prompt_config = PROMPT_CONFIG.get("vlm_call", {}).get("image_analysis", {})
     systext = prompt_config.get("systext", "You are a helpful assistant that can analyze images.")
     usertext = prompt_config.get("usertext", "请描述这张图片中你看到了什么？")
-    image_path1 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Apple_37512a22.png"
+    image_path1 = os.path.join(get_project_root(), "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Apple_37512a22.png")
     
     response = llmapi.vlm_request(systext, usertext, image_path1=image_path1)
     print("Response:", response)
@@ -202,8 +217,8 @@ if __name__ == "__main__":
     prompt_config = PROMPT_CONFIG.get("vlm_call", {}).get("multi_image_analysis", {})
     systext = prompt_config.get("systext", "You are a helpful assistant that can analyze multiple images.")
     usertext = prompt_config.get("usertext", "请比较这两张图片中的物体，它们有什么相同和不同之处？")
-    image_path1 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Apple_37512a22.png"
-    image_path2 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Bread_dca87251.png"
+    image_path1 = os.path.join(get_project_root(), "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Apple_37512a22.png")
+    image_path2 = os.path.join(get_project_root(), "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Bread_dca87251.png")
     
     response = llmapi.vlm_request(systext, usertext, image_path1=image_path1, image_path2=image_path2)
     print("Response:", response)
@@ -215,9 +230,9 @@ if __name__ == "__main__":
     prompt_config = PROMPT_CONFIG.get("vlm_call", {}).get("three_image_analysis", {})
     systext = prompt_config.get("systext", "You are a helpful assistant that can analyze multiple images.")
     usertext = prompt_config.get("usertext", "请分析这三张图片中的厨房用品，它们分别是什么？")
-    image_path1 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Apple_37512a22.png"
-    image_path2 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Bread_dca87251.png"
-    image_path3 = "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Bowl_2813285c.png"
+    image_path1 = os.path.join(get_project_root(), "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Apple_37512a22.png")
+    image_path2 = os.path.join(get_project_root(), "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Bread_dca87251.png")
+    image_path3 = os.path.join(get_project_root(), "data/item_image/FloorPlan3_physics/FloorPlan3_physics_Bowl_2813285c.png")
     
     response = llmapi.vlm_request(systext, usertext, image_path1=image_path1, image_path2=image_path2, image_path3=image_path3)
     print("Response:", response) 

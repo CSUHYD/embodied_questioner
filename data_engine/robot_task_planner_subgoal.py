@@ -19,8 +19,22 @@ import functools
 import logging
 
 
+def get_data_engine_path():
+    """获取data_engine目录的绝对路径"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    return script_dir
+
+
+def get_project_root():
+    """获取项目根目录的绝对路径"""
+    data_engine_path = get_data_engine_path()
+    return os.path.dirname(data_engine_path)
+
+
 def load_prompt_config(config_path="config/prompt_config.json"):
     """加载 prompt 配置文件"""
+    if not os.path.isabs(config_path):
+        config_path = os.path.join(get_data_engine_path(), config_path)
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -30,6 +44,14 @@ def load_prompt_config(config_path="config/prompt_config.json"):
 
 def load_scene_config(config_path="config/scene_config.json"):
     """加载场景配置文件"""
+    if not os.path.isabs(config_path):
+        # 首先尝试data_engine目录下的config
+        config_path_data_engine = os.path.join(get_data_engine_path(), config_path)
+        if os.path.exists(config_path_data_engine):
+            config_path = config_path_data_engine
+        else:
+            # 如果不存在，尝试项目根目录下的config
+            config_path = os.path.join(get_project_root(), config_path)
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -54,9 +76,11 @@ class SceneManager:
 
     def get_scene_paths(self, env, room, scene, tasktype):
         """生成场景相关的路径"""
-        metadata_path = f"data_engine/{env}/{room}/{scene}/metadata.json"
-        origin_pos_path = f"data_engine/{env}/{room}/{scene}/originPos.json"
-        generate_task = f"data_engine/{tasktype}_task_metadata/{scene}.json"
+        data_engine_path = get_data_engine_path()
+        # env 参数实际上是 "taskgenerate"，但目录结构是 taskgenerate/{room}/{scene}
+        metadata_path = os.path.join(data_engine_path, f"taskgenerate/{room}/{scene}/metadata.json")
+        origin_pos_path = os.path.join(data_engine_path, f"taskgenerate/{room}/{scene}/originPos.json")
+        generate_task = os.path.join(data_engine_path, f"{tasktype}_task_metadata/{scene}.json")
         
         return {
             'metadata_path': metadata_path,

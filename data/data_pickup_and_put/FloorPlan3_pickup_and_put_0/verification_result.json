@@ -1,12 +1,22 @@
 {
-  "task": "put the Tomato in the Plate",
-  "success": false,
-  "reason": "The tomato is visible in the refrigerator, but it is not placed on a plate. Instead, it is directly on the shelf.",
+  "task": "put tomato on the plate",
+  "success": true,
+  "reason": "The tomato is clearly visible on the plate, indicating that the task of putting the tomato on the plate has been completed successfully. All steps in the plan appear to have been followed, as the tomato is both cleaned and placed correctly.",
   "confidence": "high",
   "original_plan": [
-    "Find the Plate",
-    "Find the Tomato",
-    "Pick up the Tomato",
-    "Put the Tomato on the Plate"
+    "Find the tomato",
+    "Pick up the tomato",
+    "Go to the sink",
+    "Clean the tomato under running water",
+    "Shake off excess water from the tomato",
+    "Find the plate",
+    "Put the tomato on the plate",
+    "Find the tomato",
+    "Pick up the tomato",
+    "Go to the sink",
+    "Clean the tomato under running water",
+    "Shake off excess water from the tomato",
+    "Find the plate",
+    "Put the tomato on the plate"
   ]
 }

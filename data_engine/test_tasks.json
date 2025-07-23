@@ -1,0 +1,122 @@
+[
+  {
+    "id": "test_001",
+    "taskname": "put tomato on plate",
+    "description": "Basic pickup and place task with tomato",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_002", 
+    "taskname": "put apple in cabinet",
+    "description": "Task requiring opening and closing cabinet",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_003",
+    "taskname": "put bread in fridge",
+    "description": "Task with refrigerator access",
+    "scene": "FloorPlan3",
+    "room": "kitchens", 
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_004",
+    "taskname": "clean tomato and put on plate",
+    "description": "Multi-step task with cleaning",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_005",
+    "taskname": "put knife in drawer",
+    "description": "Task with drawer manipulation",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_006",
+    "taskname": "put egg in bowl",
+    "description": "Precision placement task",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_007", 
+    "taskname": "put cup in cabinet",
+    "description": "Container organization task",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_008",
+    "taskname": "put potato in sink",
+    "description": "Task with sink interaction",
+    "scene": "FloorPlan3", 
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_009",
+    "taskname": "put lettuce in fridge",
+    "description": "Vegetable storage task",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_010",
+    "taskname": "put mug on countertop",
+    "description": "Simple placement task",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_011",
+    "taskname": "put soap in cabinet",
+    "description": "Cleaning supply organization",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_012",
+    "taskname": "put pan on stove",
+    "description": "Cooking preparation task",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_013",
+    "taskname": "put spoon in drawer",
+    "description": "Utensil organization task",  
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_014",
+    "taskname": "put wine bottle on countertop",
+    "description": "Bottle placement task",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "pickup_and_put"
+  },
+  {
+    "id": "test_015",
+    "taskname": "find the apple",
+    "description": "Basic search task",
+    "scene": "FloorPlan3",
+    "room": "kitchens",
+    "tasktype": "single_search"
+  }
+]
