@@ -850,3 +850,21 @@ I see a kitchen scene. There is a stove with a burner in the foreground, and a p
 2025-07-23 18:37:02,976 [INFO] [ATTEMPT 2/3] Starting task attempt
 2025-07-23 18:37:03,250 [WARNING] [RESET] Failed to reset robot position on attempt 2
 2025-07-23 18:37:03,321 [INFO] [RESET] Dropping held object: Tomato|+00.92|+01.91|+01.61
+2025-07-24 15:01:33,215 [INFO] metadata_path: /Users/yuanda/Documents/embodied_reasoner/data_engine/taskgenerate/kitchens/FloorPlan3/metadata.json
+2025-07-24 15:01:33,218 [INFO] Task configuration - USE_TEST_TASKS: True, TEST_TASK_ID: test_001, RUN_ALL_TEST_TASKS: False
+2025-07-24 15:01:33,218 [INFO] Looking for test task: test_001
+2025-07-24 15:01:33,218 [INFO] Loaded 15 test tasks from /Users/yuanda/Documents/embodied_reasoner/data_engine/test_tasks.json
+2025-07-24 15:01:33,219 [INFO] Test task search result: True
+2025-07-24 15:01:33,219 [INFO] Will run test task: test_001
+2025-07-24 15:01:33,219 [INFO] 
+
+*********************************************************************
+2025-07-24 15:01:33,219 [INFO] Running Task ID: test_001
+2025-07-24 15:01:33,219 [INFO] Scene:FloorPlan3 Task_Type: pickup_and_put Task: put tomato on plate
+2025-07-24 15:01:33,219 [INFO] *********************************************************************
+
+2025-07-24 15:01:33,220 [INFO] taskname: put tomato on plate
+2025-07-24 15:01:42,178 [INFO] Initialize return: {'cameraNearPlane': 0.009999999776482582, 'cameraFarPlane': 20.0}
+2025-07-24 15:01:42,348 [INFO] Initialization succeeded
+2025-07-24 15:01:42,349 [INFO] [ATTEMPT 1/3] Starting task attempt
+2025-07-24 15:01:42,460 [WARNING] [RESET] Failed to reset robot position on attempt 1

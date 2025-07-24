@@ -74,14 +74,14 @@ class BaseAction:
     
     @staticmethod
     def move_left( controller, moveMagnitude=0.25):
-        controller.step(
+        return controller.step(
             action="MoveLeft",
             moveMagnitude=moveMagnitude
         )
     
     @staticmethod
     def move_right( controller, moveMagnitude=0.25):
-        controller.step(
+        return controller.step(
             action="MoveRight",
             moveMagnitude=moveMagnitude
         )
@@ -184,7 +184,7 @@ class BaseAction:
 
     @staticmethod
     def release(controller, ):
-        return controller.step(action="ReleaseObject")
+        return controller.step(action="DropHandObject")
     
     @staticmethod
     def put_in(controller, object_id):
