@@ -1,27 +1,35 @@
 from ai2thor.controller import Controller
-import random
 import math
 import re
 import time
 import threading
-import copy
-from PIL import Image
 import sys
 import os
-# from vlmCall import 
-from vlmCall_ollama import VLMAPI
-from utils import save_data_to_json,save_image,clear_folder,load_json,get_volume_distance_rate
-
-from baseAction import BaseAction
-from RocAgent import RocAgent       
 import json
 import logging
+
+# 添加data_engine路径到sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+data_engine_path = os.path.join(os.path.dirname(current_dir), 'data_engine')
+if data_engine_path not in sys.path:
+    sys.path.insert(0, data_engine_path)
+
+# 从data_engine导入
+from vlmCall_ollama import VLMAPI
+from utils import save_data_to_json,save_image,clear_folder,load_json,get_volume_distance_rate
+from baseAction import BaseAction
+from RocAgent import RocAgent
 
 
 def get_data_engine_path():
     """获取data_engine目录的绝对路径"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    return script_dir
+    return os.path.join(os.path.dirname(script_dir), 'data_engine')
+
+
+def get_task_planner_path():
+    """获取task_planner目录的绝对路径"""
+    return os.path.dirname(os.path.abspath(__file__))
 
 
 def get_project_root():
@@ -51,15 +59,15 @@ def load_config_file(config_path, default_value=None, fallback_to_root=False):
         default_value = {}
     
     if not os.path.isabs(config_path):
-        # 首先尝试data_engine目录下的config
-        config_path_data_engine = os.path.join(get_data_engine_path(), config_path)
-        if os.path.exists(config_path_data_engine):
-            config_path = config_path_data_engine
+        # 首先尝试task_planner目录下的config
+        config_path_task_planner = os.path.join(get_task_planner_path(), config_path)
+        if os.path.exists(config_path_task_planner):
+            config_path = config_path_task_planner
         elif fallback_to_root:
             # 如果不存在且允许回退，尝试项目根目录下的config
             config_path = os.path.join(get_project_root(), config_path)
         else:
-            config_path = config_path_data_engine
+            config_path = config_path_task_planner
     
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -268,7 +276,7 @@ class TaskPlanner:
         self.subgoals = subgoals
         return subgoals
 
-    def plan_high_level_tasks(self, taskname, environment_description, memory_text=None):
+    def plan_high_level_tasks(self, taskname, environment_description):
         """
         调用 high_level_task_planning prompt，输出高层subtask <SubtaskN> 标签（自然语言步骤）。
         """
@@ -285,7 +293,7 @@ class TaskPlanner:
         return subtasks
 
 
-    def plan_executable_subtasks(self, subgoal_or_subtask, all_decisions, context=None, mode="goals"):
+    def plan_executable_subtasks(self, subgoal_or_subtask, all_decisions, mode="goals"):
         """
         调用 executable_task_planning prompt，将高层子目标细化为可执行动作序列。
         严格解析 <SubtaskN> [action] [object1] [object2]</SubtaskN> 格式，put 动作支持两个参数。
@@ -334,27 +342,6 @@ class TaskPlanner:
                     })
         return subtasks
 
-    def replan_based_on_user_response(self, taskname, observation, question, response, subgoal):
-        """
-        根据用户回答生成新的plan（subgoals）。
-        """
-        prompt_cfg = self.config.get("replan_by_user_response")
-        systext = prompt_cfg["systext"]
-        usertext = prompt_cfg["usertext"]
-        usertext = usertext.format(
-            taskname=taskname,
-            observation=observation or "",
-            question=question or "",
-            response=response or "",
-            subgoal=subgoal or ""
-        )
-        llmapi = VLMAPI(self.model)
-        result = llmapi.vlm_request(systext, usertext)
-        # 复用高层subgoal的正则解析
-        matches = parse_xml_tags(result, "Subgoal")
-        subgoals = [content for _, content in matches]
-        self.subgoals = subgoals  # 更新成员变量
-        return subgoals
 
     def replan_subgoals_based_on_user_response(self, taskname, observation, question, response, subgoals):
         """
@@ -377,9 +364,18 @@ class TaskPlanner:
         self.subgoals = new_subgoals
         return new_subgoals
 
-    def replan_subtasks_based_on_user_response(self, taskname, observation, question, response, subtasks):
+    def replan_subtasks_based_on_user_response(self, taskname, observation, qa_history, subtasks):
         """
-        根据用户回答，重新规划subtasks，确保考虑用户的具体要求。
+        根据用户问答历史，重新规划subtasks，确保考虑用户的具体要求。
+        
+        Args:
+            taskname: 任务名称
+            observation: 环境观察
+            qa_history: 问答历史字符串，格式为 "Q: ... A: ..."
+            subtasks: 原始子任务列表
+            
+        Returns:
+            list: 重新规划后的子任务列表
         """
         prompt_cfg = self.config.get("replan_subtasks_based_on_user_response")
         systext = prompt_cfg["systext"]
@@ -388,11 +384,25 @@ class TaskPlanner:
         # 格式化原始计划
         subtasks_str = '\n'.join([f"- {task}" for task in subtasks]) if subtasks else ""
         
+        # 从qa_history中提取最新的问答对
+        latest_question = ""
+        latest_response = ""
+        if qa_history:
+            qa_pairs = qa_history.split('\n')
+            if len(qa_pairs) >= 2:
+                # 获取最后一对问答
+                for i in range(len(qa_pairs)-1, -1, -1):
+                    if qa_pairs[i].startswith('Q: '):
+                        latest_question = qa_pairs[i][3:]  # 去掉 "Q: " 前缀
+                        if i+1 < len(qa_pairs) and qa_pairs[i+1].startswith('A: '):
+                            latest_response = qa_pairs[i+1][3:]  # 去掉 "A: " 前缀
+                        break
+        
         usertext = usertext.format(
             taskname=taskname,
             environment_description=observation or "",
-            question=question or "",
-            response=response or "",
+            question=latest_question,
+            response=latest_response,
             subtasks=subtasks_str
         )
         llmapi = VLMAPI(self.model)
@@ -424,7 +434,7 @@ class TaskPlanner:
             ]
         """
         all_subtasks = []
-        for idx, subgoal in enumerate(subgoals):
+        for subgoal in subgoals:
             # Decompose each subgoal into executable subtasks
             subtasks = self.plan_executable_subtasks(subgoal, all_subtasks, context=context, mode='goals')
             for subtask in subtasks:
@@ -629,49 +639,52 @@ class TaskPlanner:
         logging.info(f"[DECISIONS] Generated {len(decisions)} unique actions from {len(matches)} total actions")
         return decisions
 
-    def subtasks_to_decisions_stepbystep(self, subtasks):
+    def judge_replan_need(self, taskname, plan, user_response):
         """
-        将自然语言subtasks（如'Find the apple'）转为可执行action结构，并去重。
-        这个方法会逐个处理每个subtask。
+        判断是否需要重新规划
+        返回 (need_replan: bool, reason: str)
         """
-        all_decisions = []
-        seen = set()
-        for idx, subtask in enumerate(subtasks):
-            # Decompose each subgoal into executable subtasks
-            decisions = self.plan_executable_subtasks(subtask, all_decisions, mode='tasks')
-            for subtask in decisions:
-                action = subtask.get("action", "")
-                objectType = subtask.get("objectType", "")
-                # put 动作特殊处理
-                if action == "put":
-                    # 假设 objectType 形如 "apple on plate" 或 "apple plate"
-                    parts = objectType.split(" on ") if " on " in objectType else objectType.split()
-                    if len(parts) == 2:
-                        obj, target = parts[0].strip(), parts[1].strip()
-                    else:
-                        obj, target = objectType, ""
-                    decisionmaking = f"put {obj} on {target}" if target else f"put {obj}"
-                    key = (action, obj, target)
-                    if key not in seen:
-                        all_decisions.append({
-                            "action": action,
-                            "objectType": obj,
-                            "targetObject": target,
-                            "decisionmaking": decisionmaking
-                        })
-                        seen.add(key)
-                else:
-                    # 其它动作
-                    decisionmaking = f"{action} {objectType}" if action and objectType else action
-                    key = (action, objectType)
-                    if key not in seen:
-                        all_decisions.append({
-                            "action": action,
-                            "objectType": objectType,
-                            "decisionmaking": decisionmaking
-                        })
-                        seen.add(key)
-        return all_decisions
+        prompt_cfg = self.config.get("user_response_replan_judge")
+        systext = prompt_cfg["systext"]
+        usertext = prompt_cfg["usertext"]
+
+        plan_str = "\n".join([str(p) for p in plan]) if isinstance(plan, list) else str(plan)
+        
+        usertext = usertext.format(
+            taskname=taskname,
+            plan=plan_str,
+            user_response=user_response
+        )
+        
+        llmapi = VLMAPI(self.model)
+        result = llmapi.vlm_request(systext, usertext)
+        
+        def parse_replan_result(result):
+            # 1. 先找所有 REPLAN: yes/no（允许前后有空格、大小写、换行）
+            matches = re.findall(r'REPLAN\s*:\s*(yes|no)', result, re.IGNORECASE)
+            if matches:
+                return matches[0].strip().lower()
+            # 2. 兜底：只要有yes/no字样，且不是reason里的
+            result_lower = result.lower()
+            lines = [line.strip() for line in result_lower.splitlines()]
+            for line in lines:
+                if line.startswith('replan') and 'yes' in line:
+                    return 'yes'
+                if line.startswith('replan') and 'no' in line:
+                    return 'no'
+            # 3. 再兜底：全文只要有yes/no
+            if 'replan' in result_lower and 'yes' in result_lower:
+                return 'yes'
+            if 'replan' in result_lower and 'no' in result_lower:
+                return 'no'
+            # 4. 实在不行返回None
+            return None
+            
+        replan_value = parse_replan_result(result)
+        need_replan = replan_value == "yes"
+        reason_m = re.search(r'REASON:\s*(.*)', result)
+        reason = reason_m.group(1).strip() if reason_m else result.strip()
+        return need_replan, reason
 
 class ObservationGenerator:
     def __init__(self, model, config=None):
@@ -697,158 +710,329 @@ class ObservationGenerator:
         save_image(event, init_image_path)
         return init_image_path
 
-class QuestionGenerator:
-    def __init__(self, model, config=None):
+class QuestionAnswerHandler:
+    """统一的问答处理类，集成问题生成、用户回答处理和重规划判断功能"""
+    
+    def __init__(self, model, taskname=None, plan=None, config=None):
         self.model = model
+        self.taskname = taskname
+        self.plan = plan
         self.config = config or PROMPT_CONFIG
+        self.qa_history = []  # 问答历史记录
+        self.last_question = None
+        
+    def update_context(self, taskname=None, plan=None):
+        """更新上下文信息"""
+        if taskname is not None:
+            self.taskname = taskname
+        if plan is not None:
+            self.plan = plan
 
-    def generate_general_question_for_plan(self, taskname, subgoals, observation=None):
+    def generate_general_question_for_plan(self, taskname, subtasks, observation=None):
         """
         针对初始任务规划（subgoals）和observation，自动提出一个general类型的问题。
         """
         prompt_cfg = self.config.get("general_plan_question")
         systext = prompt_cfg["systext"]
         usertext = prompt_cfg["usertext"]
-        subgoals_str = "\n".join([f"- {g}" for g in subgoals])
-        usertext = usertext.format(taskname=taskname, subgoals=subgoals_str, observation=observation or "")
+        subtasks_str = "\n".join([f"- {g}" for g in subtasks])
+        usertext = usertext.format(taskname=taskname, subtasks=subtasks_str, observation=observation or "")
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
         m = re.search(r'QUESTION:\s*(.*)', result)
         question = m.group(1).strip() if m else result.strip()
+        self.last_question = question
         return question
 
-    # def should_ask_question_vlm(self, taskname, observation=None, planning=None, memory_text=None, navigable_list=None, error_message=None):
-    #     """
-    #     由VLM判断是否需要提问，并返回(should_ask, type, question)
-    #     """
-    #     import re
-    #     prompt_cfg = self.config["question_judge"]
-    #     systext = prompt_cfg["systext"]
-    #     # 直接将变量显式输入
-    #     navigable_str = ""
-    #     if navigable_list:
-    #         types = list(set([item["objectType"] for item in navigable_list]))
-    #         navigable_str = ", ".join(types)
-    #     usertext = prompt_cfg["usertext"].format(
-    #         taskname=taskname,
-    #         observation=observation or "",
-    #         planning=planning or "",
-    #         memory_text=memory_text or "",
-    #         navigable_str=navigable_str,
-    #         error_message=error_message or ""
-    #     )
-    #     llmapi = VLMAPI(self.model)
-    #     result = llmapi.vlm_request(systext, usertext)
-    #     ask = re.search(r'ASK:\s*(yes|no)', result, re.IGNORECASE)
-    #     qtype = re.search(r'TYPE:\s*(clarification|help|general)', result, re.IGNORECASE)
-    #     question = re.search(r'QUESTION:\s*(.*)', result)
-    #     should_ask = ask and ask.group(1).strip().lower() == "yes"
-    #     question_type = qtype.group(1).strip().lower() if qtype else "general"
-    #     question_text = question.group(1).strip() if question else ""
-    #     return should_ask, question_type, question_text
-
-
-class UserResponseHandler:
-    def __init__(self, model, taskname, plan, memory, config=None):
-        self.model = model
-        self.taskname = taskname
-        self.plan = plan
-        self.memory = memory
-        self.config = config or PROMPT_CONFIG
-
-    def init_response(self, user_response):
+    def generate_clarification_question(self, taskname, current_step, issue_description):
         """
-        综合当前task、规划、问答历史和用户回答，判断是否需要replan。
-        返回 (need_replan: bool, reason: str)
+        生成澄清问题，用于在执行过程中遇到问题时询问用户
         """
-        # 这里可以用LLM判断，也可以用规则。先给出LLM prompt方案：
-        prompt_cfg = self.config.get("user_response_replan_judge")
-        systext = prompt_cfg["systext"]
-        usertext = prompt_cfg["usertext"]
-
-        plan_str = "\n".join([str(p) for p in self.plan]) if isinstance(self.plan, list) else str(self.plan)
-        memory_str = "\n".join([m["content"] if isinstance(m, dict) and "content" in m else str(m) for m in self.memory]) if isinstance(self.memory, list) else str(self.memory)
+        prompt_cfg = self.config.get("clarification_question", {})
+        systext = prompt_cfg.get("systext", "Generate a clarification question based on the current situation.")
+        usertext = prompt_cfg.get("usertext", "Task: {taskname}\nCurrent step: {current_step}\nIssue: {issue_description}\nGenerate a clarification question:")
+        
         usertext = usertext.format(
-            taskname=self.taskname,
-            plan=plan_str,
-            memory=memory_str,
-            user_response=user_response
+            taskname=taskname,
+            current_step=current_step,
+            issue_description=issue_description
         )
+        
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
-        def parse_replan_result(result):
-            # 1. 先找所有 REPLAN: yes/no（允许前后有空格、大小写、换行）
-            matches = re.findall(r'REPLAN\s*:\s*(yes|no)', result, re.IGNORECASE)
-            if matches:
-                return matches[0].strip().lower()
-            # 2. 兜底：只要有yes/no字样，且不是reason里的
-            result_lower = result.lower()
-            lines = [line.strip() for line in result_lower.splitlines()]
-            for line in lines:
-                if line.startswith('replan') and 'yes' in line:
-                    return 'yes'
-                if line.startswith('replan') and 'no' in line:
-                    return 'no'
-            # 3. 再兜底：全文只要有yes/no
-            if 'replan' in result_lower and 'yes' in result_lower:
-                return 'yes'
-            if 'replan' in result_lower and 'no' in result_lower:
-                return 'no'
-            # 4. 实在不行返回None
-            return None
-        replan_value = parse_replan_result(result)
-        need_replan = replan_value == "yes"
-        reason_m = re.search(r'REASON:\s*(.*)', result)
-        reason = reason_m.group(1).strip() if reason_m else result.strip()
-        return need_replan, reason
+        m = re.search(r'QUESTION:\s*(.*)', result)
+        question = m.group(1).strip() if m else result.strip()
+        self.last_question = question
+        return question
 
     def get_user_response(self, question):
-        """模拟或实际获取用户回答。实际部署时可替换为input()或UI交互。"""
+        """获取用户回答并记录到历史中"""
+        if question:
+            print(f"🤖：{question}")
         user_response = input("😁：请输入你的回答：")
-        # 这里可替换为实际交互
-        # user_response = 'cut tomato before put on the plate.'
+        
+        # 记录问答对
+        if question:
+            self.qa_history.append({
+                "question": question,
+                "answer": user_response,
+                "timestamp": time.time()
+            })
+        
         return user_response
+
+    def get_user_response_with_history(self, question):
+        """
+        获取用户回答并记录到历史中（不包含重规划判断）
+        返回用户回答
+        """
+        user_response = self.get_user_response(question)
+        return user_response
+
+    def get_qa_history(self, max_pairs=10):
+        """
+        获取问答历史，格式化为字符串
+        """
+        recent_history = self.qa_history[-max_pairs:] if self.qa_history else []
+        qa_pairs = [f"Q: {item['question']}\nA: {item['answer']}" for item in recent_history]
+        return "\n".join(qa_pairs)
+
+    def clear_qa_history(self):
+        """清空问答历史"""
+        self.qa_history = []
+        self.last_question = None
+
+    def add_qa_pair(self, question, answer):
+        """手动添加问答对到历史中"""
+        self.qa_history.append({
+            "question": question,
+            "answer": answer,
+            "timestamp": time.time()
+        })
+    
+    def should_ask_question_for_decision(self, taskname, decision, remaining_decisions, navigable_objects=None):
+        """
+        判断是否需要针对当前决策提问
+        
+        Args:
+            taskname: 任务名称
+            decision: 当前要执行的决策
+            remaining_decisions: 剩余的决策列表
+            navigable_objects: 可导航的对象列表
+            
+        Returns:
+            tuple: (should_ask: bool, reason: str)
+        """
+        qa_history = self.get_qa_history()
+        
+        # 准备prompt配置
+        prompt_cfg = self.config.get("decision_question_judge", {})
+        systext = prompt_cfg.get("systext", "You are a robot assistant. Your job is to decide whether you need to ask the user a question before executing a specific action.")
+        usertext = prompt_cfg.get("usertext", "")
+        
+        # 格式化参数
+        navigable_objects_str = ", ".join(navigable_objects) if navigable_objects else "None available"
+        remaining_str = "\n".join([f"- {d.get('decisionmaking', d.get('action', '') + ' ' + d.get('objectType', ''))}" for d in remaining_decisions[:3]])
+        
+        usertext = usertext.format(
+            taskname=taskname,
+            decision=decision.get("decisionmaking", decision.get("action", "") + " " + decision.get("objectType", "")),
+            remaining_decisions=remaining_str,
+            navigable_objects=navigable_objects_str,
+            qa_history=qa_history
+        )
+        
+        llmapi = VLMAPI(self.model)
+        result = llmapi.vlm_request(systext, usertext)
+        
+        # 解析结果
+        ask_match = re.search(r'ASK:\s*(yes|no)', result, re.IGNORECASE)
+        reason_match = re.search(r'REASON:\s*(.*)', result, re.DOTALL)
+        
+        should_ask = ask_match and ask_match.group(1).strip().lower() == "yes" if ask_match else False
+        reason = reason_match.group(1).strip() if reason_match else "No reason provided"
+        
+        return should_ask, reason
+    
+    def generate_decision_question(self, taskname, decision, remaining_decisions, navigable_objects=None):
+        """
+        为当前决策生成具体的问题
+        
+        Args:
+            taskname: 任务名称
+            decision: 当前决策
+            remaining_decisions: 剩余决策列表
+            navigable_objects: 可导航的对象列表
+            
+        Returns:
+            str: 生成的问题
+        """
+        qa_history = self.get_qa_history()
+        
+        # 准备prompt配置
+        prompt_cfg = self.config.get("decision_specific_question", {
+            "systext": "You are a robot assistant. Your job is to generate a specific question about the current action to help clarify how to proceed.",
+            "usertext": "You are working on the task: {taskname}\n\nYou are about to execute: {decision}\n\nRemaining actions: {remaining_decisions}\n\nAvailable objects: {navigable_objects}\n\nPrevious Q&A history:\n{qa_history}\n\nGenerate a specific question to ask the user about this action. The question should help clarify:\n- How to approach this specific action\n- Which objects to prioritize\n- Any preferences or special requirements\n\nPlease provide your question in the format:\nQUESTION: [your specific question]"
+        })
+        
+        systext = prompt_cfg["systext"]
+        usertext = prompt_cfg["usertext"]
+        
+        # 格式化参数
+        navigable_objects_str = ", ".join(navigable_objects) if navigable_objects else "None available"
+        remaining_str = "\n".join([f"- {d.get('decisionmaking', d.get('action', '') + ' ' + d.get('objectType', ''))}" for d in remaining_decisions[:3]])
+        
+        usertext = usertext.format(
+            taskname=taskname,
+            decision=decision.get("decisionmaking", decision.get("action", "") + " " + decision.get("objectType", "")),
+            remaining_decisions=remaining_str,
+            navigable_objects=navigable_objects_str,
+            qa_history=qa_history
+        )
+        
+        llmapi = VLMAPI(self.model)
+        result = llmapi.vlm_request(systext, usertext)
+        
+        # 提取问题
+        question_match = re.search(r'QUESTION:\s*(.*)', result, re.DOTALL)
+        if question_match:
+            return question_match.group(1).strip()
+        return result.strip()
+
+
+class TaskVerificationHandler:
+    """
+    处理任务完成验证的类
+    """
+    
+    def __init__(self, controller, model, observation_generator, origin_path):
+        """
+        初始化任务验证处理器
+        
+        Args:
+            controller: AI2Thor控制器实例
+            model: 使用的模型名称
+            observation_generator: 观察生成器实例
+            origin_path: 数据保存的根路径
+        """
+        self.controller = controller
+        self.model = model
+        self.observation_generator = observation_generator
+        self.origin_path = origin_path
+    
+    def verify_task_completion(self, taskname, original_plan, image_path=None):
+        """
+        使用VLM验证任务是否成功完成
+        
+        Args:
+            taskname: 任务名称
+            original_plan: 原始计划列表
+            image_path: 验证图片路径，如果为None则自动截图
+        
+        Returns:
+            tuple: (is_success: bool, reason: str, confidence: str)
+        """
+        try:
+            # 如果没有提供图片路径，则自动截图
+            if image_path is None:
+                verification_dir = f"{self.origin_path}/verification"
+                os.makedirs(verification_dir, exist_ok=True)
+                image_path = f"{verification_dir}/final_verification.png"
+                save_image(self.controller.last_event, image_path)
+                logging.info(f"[VERIFY] Saved verification image: {image_path}")
+            
+            # 准备prompt参数
+            prompt_cfg = self.observation_generator.config.get("task_verification", {})
+            systext = prompt_cfg.get("systext", "")
+            usertext = prompt_cfg.get("usertext", "").format(
+                taskname=taskname,
+                original_plan="\n".join([f"- {plan}" for plan in original_plan])
+            )
+            
+            # 调用VLM进行验证
+            llmapi = VLMAPI(self.model)
+            result = llmapi.vlm_request(systext, usertext, image_path)
+            
+            # 解析VLM返回结果
+            success_match = re.search(r'SUCCESS:\s*(yes|no)', result, re.IGNORECASE)
+            reason_match = re.search(r'REASON:\s*(.*?)(?=\nCONFIDENCE:|$)', result, re.DOTALL)
+            confidence_match = re.search(r'CONFIDENCE:\s*(high|medium|low)', result, re.IGNORECASE)
+            
+            is_success = success_match and success_match.group(1).strip().lower() == "yes" if success_match else False
+            reason = reason_match.group(1).strip() if reason_match else "No reason provided"
+            confidence = confidence_match.group(1).strip().lower() if confidence_match else "unknown"
+            
+            logging.info(f"[VERIFY] Task verification result: SUCCESS={is_success}, CONFIDENCE={confidence}")
+            logging.info(f"[VERIFY] Reason: {reason}")
+            
+            return is_success, reason, confidence
+            
+        except Exception as e:
+            logging.error(f"[VERIFY] Error during task verification: {e}")
+            return False, f"Verification failed due to error: {e}", "low"
+    
+    def save_verification_result(self, taskname, is_success, reason, confidence, verification_data=None):
+        """
+        保存验证结果到文件
+        
+        Args:
+            taskname: 任务名称
+            is_success: 是否成功
+            reason: 验证原因
+            confidence: 置信度
+            verification_data: 其他验证数据
+        """
+        try:
+            verification_dir = f"{self.origin_path}/verification"
+            os.makedirs(verification_dir, exist_ok=True)
+            
+            result_data = {
+                "task_name": taskname,
+                "success": is_success,
+                "reason": reason,
+                "confidence": confidence,
+                "timestamp": self._get_current_timestamp()
+            }
+            
+            if verification_data:
+                result_data.update(verification_data)
+            
+            result_file = f"{verification_dir}/verification_result.json"
+            with open(result_file, 'w', encoding='utf-8') as f:
+                json.dump(result_data, f, ensure_ascii=False, indent=2)
+            
+            logging.info(f"[VERIFY] Saved verification result to: {result_file}")
+            
+        except Exception as e:
+            logging.error(f"[VERIFY] Error saving verification result: {e}")
+    
+    def _get_current_timestamp(self):
+        """获取当前时间戳"""
+        from datetime import datetime
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 class RobotController:
     def __init__(self, controller, metadata, model, origin_path, config=None):
-        self.memory = []  # 长期记忆
         self.controller = controller
         self.metadata = metadata
         self.model = model
         self.origin_path = origin_path
         self.observation_generator = ObservationGenerator(model, config)
         self.task_planner = TaskPlanner(model, config)
-        self.question_generator = QuestionGenerator(model, config)
-        self.user_response_handler = UserResponseHandler(model, None, None, self.memory, config)
+        self.qa_handler = QuestionAnswerHandler(model, config=config)
+        self.verification_handler = TaskVerificationHandler(controller, model, self.observation_generator, origin_path)
         # 添加navigable_list相关属性
         self.navigable_list = []
         self.round = 1
         self.his_objects_list = []
         # 添加提问相关属性
         self.failed_attempts = 0
-        self.last_question = None
-        self.qa_history = []  # 专门记录问答历史
         self.rocAgent=RocAgent(controller)
         self.recent_interactions = {}  # 记录最近交互的对象ID，格式: {object_type: object_id}
         self.opened_containers_for_search = []  # 记录为搜索而打开的容器，需要在适当时机关闭  
 
 
-    def add_memory(self, entry, memory_type):
-        """
-        存储记忆内容，memory_type为类别（如'planning'、'question'、'answer'等），entry为内容。
-        """
-        self.memory.append({"type": memory_type, "content": entry})
-
-    def get_memory_text(self, max_steps=10, type_filter=None):
-        """
-        返回最近的max_steps条记忆内容，可选按type过滤。
-        """
-        if type_filter:
-            filtered = [m["content"] for m in self.memory if m["type"] == type_filter]
-            return "\n".join(filtered[-max_steps:])
-        else:
-            return "\n".join(m["content"] for m in self.memory[-max_steps:])
 
     def initial_navigable_list(self):
         """初始化可导航对象列表"""
@@ -915,15 +1099,14 @@ class RobotController:
         subgoals = self.task_planner.plan_high_level_goals(
             taskname, environment_description, memory_text=memory_text
         )
-        self.add_memory(f"Initial Task Planning: {subgoals}", "planning")
         return subgoals
     
-    def plan_high_level_tasks(self, taskname, environment_description, memory_text=None):
+    def plan_high_level_tasks(self, taskname, environment_description):
         """
-        首次任务规划：将任务分解为自然语言subtasks，不使用memory。
+        首次任务规划：将任务分解为自然语言subtasks。
         """
         subtasks = self.task_planner.plan_high_level_tasks(
-            taskname, environment_description, memory_text=memory_text
+            taskname, environment_description
         )
         return subtasks
 
@@ -931,36 +1114,95 @@ class RobotController:
         """获取可导航列表"""
         return self.navigable_list
 
-    def receive_user_response(self, response):
-        """接收用户回答"""
-        logging.info("[ROBOT QUESTION] %s. User Response: %s.", self.last_question, response)
-        self.add_memory(f"User Response: {response}", "answer")
-        # 更新专门的QA历史记录
-        if self.last_question:
-            self.qa_history.append({"question": self.last_question, "answer": response})
-
-    def ask_general_question_for_plan(self, taskname, subgoals, observation=None):
+    def ask_general_question_for_plan(self, taskname, subtasks, observation=None):
         """
-        针对初始任务规划和observation，自动提出general类型的问题并存入memory。
+        针对初始任务规划和observation，自动提出general类型的问题。
         """
-        question = self.question_generator.generate_general_question_for_plan(taskname, subgoals, observation=observation)
+        self.qa_handler.update_context(taskname=taskname, plan=subtasks)
+        question = self.qa_handler.generate_general_question_for_plan(taskname, subtasks, observation=observation)
         if question:
-            self.last_question = question
-            self.add_memory(f"General Question: {question}", "question")
             logging.info("[GENERAL QUESTION] %s", question)
         return question
+
+    def process_user_response(self, question, subtasks, taskname=None):
+        """
+        处理完整的用户问答交互流程
+        返回 (user_response, need_replan, reason)
+        """
+        # 获取用户回答（自动记录到qa_history）
+        user_response = self.qa_handler.get_user_response_with_history(question)
+        logging.info("[USER RESPONSE] %s", user_response)
+        
+        # 使用TaskPlanner判断是否需要重规划
+        need_replan, reason = self.task_planner.judge_replan_need(
+            taskname=taskname,
+            plan=subtasks,
+            user_response=user_response
+        )
+        
+        return user_response, need_replan, reason
 
     def get_qa_history(self):
         """
         获取问答历史，格式化为字符串。
         """
-        qa_pairs = [f"Q: {item['question']}\nA: {item['answer']}" for item in self.qa_history]
-        return "\n".join(qa_pairs)
+        return self.qa_handler.get_qa_history()
 
-    def set_user_response_handler_context(self, taskname, plan):
-        self.user_response_handler.taskname = taskname
-        self.user_response_handler.plan = plan
-        self.user_response_handler.memory = self.memory
+    def ask_clarification_question(self, taskname, current_step, issue_description):
+        """
+        生成并处理澄清问题
+        """
+        self.qa_handler.update_context(taskname=taskname, plan=None)
+        question = self.qa_handler.generate_clarification_question(taskname, current_step, issue_description)
+        if question:
+            logging.info("[CLARIFICATION QUESTION] %s", question)
+        return question
+
+    def should_ask_question_for_decision(self, taskname, decision, remaining_decisions):
+        """
+        判断是否需要针对当前决策提问
+        
+        Args:
+            taskname: 任务名称
+            decision: 当前要执行的决策
+            remaining_decisions: 剩余的决策列表
+            
+        Returns:
+            bool: 是否需要提问
+        """
+        navigable_list = self.get_navigable_list()
+        navigable_objects = [item["objectType"] for item in navigable_list]
+        
+        should_ask, reason = self.qa_handler.should_ask_question_for_decision(
+            taskname, decision, remaining_decisions, navigable_objects
+        )
+        
+        if should_ask:
+            logging.info(f"[DECISION QUESTION] Will ask question for decision '{decision.get('decisionmaking')}'. Reason: {reason}")
+        
+        return should_ask
+
+    def generate_decision_question(self, taskname, decision, remaining_decisions):
+        """
+        为当前决策生成具体的问题
+        
+        Args:
+            taskname: 任务名称
+            decision: 当前决策
+            remaining_decisions: 剩余决策列表
+            
+        Returns:
+            str: 生成的问题
+        """
+        navigable_list = self.get_navigable_list()
+        navigable_objects = [item["objectType"] for item in navigable_list]
+        
+        question = self.qa_handler.generate_decision_question(
+            taskname, decision, remaining_decisions, navigable_objects
+        )
+        
+        logging.info(f"[DECISION QUESTION] Generated question for '{decision.get('decisionmaking')}': {question}")
+        return question
 
     def rank_possible_placement_locations(self, taskname, target, navigable_list, qa_history="", place_num=3):
         """
@@ -1020,45 +1262,7 @@ class RobotController:
         Returns:
             tuple: (is_success: bool, reason: str, confidence: str)
         """
-        try:
-            # 如果没有提供图片路径，则自动截图
-            if image_path is None:
-                import os
-                verification_dir = f"{self.origin_path}/verification"
-                os.makedirs(verification_dir, exist_ok=True)
-                image_path = f"{verification_dir}/final_verification.png"
-                save_image(self.controller.last_event, image_path)
-                logging.info(f"[VERIFY] Saved verification image: {image_path}")
-            
-            # 准备prompt参数
-            prompt_cfg = self.observation_generator.config.get("task_verification", {})
-            systext = prompt_cfg.get("systext", "")
-            usertext = prompt_cfg.get("usertext", "").format(
-                taskname=taskname,
-                original_plan="\n".join([f"- {plan}" for plan in original_plan])
-            )
-            
-            # 调用VLM进行验证
-            llmapi = VLMAPI(self.model)
-            result = llmapi.vlm_request(systext, usertext, image_path)
-            
-            # 解析VLM返回结果
-            success_match = re.search(r'SUCCESS:\s*(yes|no)', result, re.IGNORECASE)
-            reason_match = re.search(r'REASON:\s*(.*?)(?=\nCONFIDENCE:|$)', result, re.DOTALL)
-            confidence_match = re.search(r'CONFIDENCE:\s*(high|medium|low)', result, re.IGNORECASE)
-            
-            is_success = success_match and success_match.group(1).strip().lower() == "yes" if success_match else False
-            reason = reason_match.group(1).strip() if reason_match else "No reason provided"
-            confidence = confidence_match.group(1).strip().lower() if confidence_match else "unknown"
-            
-            logging.info(f"[VERIFY] Task verification result: SUCCESS={is_success}, CONFIDENCE={confidence}")
-            logging.info(f"[VERIFY] Reason: {reason}")
-            
-            return is_success, reason, confidence
-            
-        except Exception as e:
-            logging.error(f"[VERIFY] Error during task verification: {e}")
-            return False, f"Verification failed due to error: {e}", "low"
+        return self.verification_handler.verify_task_completion(taskname, original_plan, image_path)
 
     def navigate_to_object(self, object_id):
         """
@@ -1238,15 +1442,62 @@ class RobotController:
 
     def execute_decisions(self, taskname, decisions):
         """
-        执行决策序列。
+        执行决策序列，支持"走一步看一步"模式。
+        在每个决策执行前判断是否需要提问，根据用户回答可能重新规划。
+        
         Args:
             taskname: 当前任务名称
             decisions: 决策列表
         """
         navigable_list = self.get_navigable_list()
         qa_history = self.get_qa_history()
-
-        for decision in decisions:
+        
+        decision_index = 0
+        while decision_index < len(decisions):
+            decision = decisions[decision_index]
+            remaining_decisions = decisions[decision_index + 1:]
+            
+            # 步骤1: 判断是否需要针对当前决策提问
+            if self.should_ask_question_for_decision(taskname, decision, remaining_decisions):
+                # 生成具体问题
+                question = self.generate_decision_question(taskname, decision, remaining_decisions)
+                
+                # 处理用户交互
+                user_response, need_replan, reason = self.process_user_response(question, decisions, taskname)
+                logging.info(f"[DECISION QA] User response: {user_response}")
+                logging.info(f"[DECISION QA] Need replan: {need_replan}, Reason: {reason}")
+                
+                if need_replan:
+                    # 步骤2: 根据用户回答重新规划剩余的decisions
+                    logging.info("[DECISION REPLAN] Replanning remaining decisions based on user response...")
+                    
+                    # 将剩余的decisions转换为subtasks格式进行重新规划
+                    remaining_subtasks = [d.get("decisionmaking", f"{d.get('action', '')} {d.get('objectType', '')}") 
+                                        for d in remaining_decisions]
+                    remaining_subtasks.insert(0, decision.get("decisionmaking", f"{decision.get('action', '')} {decision.get('objectType', '')}"))  # 包含当前决策
+                    
+                    qa_history_for_replan = self.get_qa_history()
+                    new_subtasks = self.task_planner.replan_subtasks_based_on_user_response(
+                        taskname, "", qa_history_for_replan, remaining_subtasks
+                    )
+                    
+                    # 将新的subtasks转换为decisions格式
+                    new_decisions = self.task_planner.subtasks_to_decisions(new_subtasks)
+                    
+                    # 步骤3: 更新decisions列表
+                    # 保留已执行的decisions + 新规划的decisions
+                    decisions = decisions[:decision_index] + new_decisions
+                    logging.info(f"[DECISION REPLAN] Updated decisions: {[d.get('decisionmaking', '') for d in new_decisions]}")
+                    
+                    # 继续执行当前索引的决策（可能已被重新规划）
+                    if decision_index >= len(decisions):
+                        logging.info("[DECISION REPLAN] All decisions completed after replanning")
+                        break
+                    
+                    # 重新获取当前决策（可能已被更新）
+                    decision = decisions[decision_index]
+            
+            # 步骤4: 执行当前决策
             action = decision["action"].lower()
             object_type = decision["objectType"]
             decisionmaking = decision["decisionmaking"]
@@ -1261,7 +1512,6 @@ class RobotController:
                 if not found:
                     logging.error(f"[ERROR] Search failed for {object_type}, stopping execution.")
                     break
-                continue
 
             # 2. 导航类动作
             elif action in ["navigate", "navigate to", "goto", "go to", "move to"]:
@@ -1271,7 +1521,6 @@ class RobotController:
                     self.update_metadata()
                 else:
                     logging.warning(f"[WARNING] Cannot navigate to {object_type}, as it is not in the navigable list.")
-                continue
 
             # 3. 交互类动作
             elif action in ["pickup", "pick up", "pick_up", "open", "close", "toggle", "toggle_on", "toggle_off", 
@@ -1476,34 +1725,36 @@ class RobotController:
             # 4. 未知动作
             else:
                 logging.warning(f"[SKIP] Action {action} not recognized for auto-execution.")
+            
+            # 步骤5: 递增决策索引，继续下一个决策
+            decision_index += 1
 
 
-if __name__=="__main__":
+def main():
     """
     Robot Task Planner Main Program
     
     测试任务配置说明：
     1. USE_TEST_TASKS = True: 使用 test_tasks.json 中的测试任务
-       USE_TEST_TASKS = False: 使用手动指定的任务（见 manual_task）
+    USE_TEST_TASKS = False: 使用手动指定的任务（见 manual_task）
     
     2. 当 USE_TEST_TASKS = True 时：
-       - RUN_ALL_TEST_TASKS = True: 依次运行所有测试任务
-       - RUN_ALL_TEST_TASKS = False: 运行 TEST_TASK_ID 指定的单个任务
+    - RUN_ALL_TEST_TASKS = True: 依次运行所有测试任务
+    - RUN_ALL_TEST_TASKS = False: 运行 TEST_TASK_ID 指定的单个任务
     
     3. 可用的测试任务 ID（见 test_tasks.json）：
-       test_001: put tomato on plate
-       test_002: put apple in cabinet  
-       test_003: put bread in fridge
-       test_004: clean tomato and put on plate
-       test_005: put knife in drawer
-       ... 等等
+    test_001: put tomato on plate
+    test_002: put apple in cabinet  
+    test_003: put bread in fridge
+    test_004: clean tomato and put on plate
+    test_005: put knife in drawer
+    ... 等等
     
     使用示例：
     - 运行单个测试任务: USE_TEST_TASKS=True, TEST_TASK_ID="test_001", RUN_ALL_TEST_TASKS=False
     - 运行所有测试任务: USE_TEST_TASKS=True, RUN_ALL_TEST_TASKS=True
     - 使用手动任务: USE_TEST_TASKS=False
     """
-    
     env="taskgenerate"
     model = "qwen2.5vl:32b" # use gpt-4o to generate trajectories
     # you can set timeout for AI2THOR init here.        
@@ -1520,9 +1771,9 @@ if __name__=="__main__":
     
     # 设置日志配置，保存到文件
     import os
-    data_engine_log_dir = os.path.join(get_data_engine_path(), f"logs/{scene}_{tasktype}")
-    os.makedirs(data_engine_log_dir, exist_ok=True)
-    log_file = os.path.join(data_engine_log_dir, f"robot_execution_{scene}.log")
+    task_planner_log_dir = os.path.join(get_task_planner_path(), f"logs/{scene}_{tasktype}")
+    os.makedirs(task_planner_log_dir, exist_ok=True)
+    log_file = os.path.join(task_planner_log_dir, f"robot_execution_{scene}.log")
     setup_logging(log_file)
     
     # 创建场景管理器
@@ -1585,8 +1836,8 @@ if __name__=="__main__":
 
         logging.info("taskname: %s", taskname)
         
-        start_time = time.time()
-        origin_path = os.path.join(get_data_engine_path(), f"data/data_{tasktype}/{scene}_{tasktype}_{task_idx}")
+
+        origin_path = os.path.join(get_task_planner_path(), f"data/data_{tasktype}/{scene}_{tasktype}_{task_idx}")
         
         # 计算场景对角线距离
         scene_diagonal = scene_manager.calculate_scene_diagonal(metadata)
@@ -1653,25 +1904,20 @@ if __name__=="__main__":
                 question = robot_controller.ask_general_question_for_plan(taskname, subtasks)
                 
                 if question:
-                    robot_controller.set_user_response_handler_context(taskname, subtasks)
-                    # 获取用户回答
-                    user_response = robot_controller.user_response_handler.get_user_response(question)
-                    robot_controller.receive_user_response(user_response)
-
+                    # 处理用户问答交互
+                    user_response, need_replan, reason = robot_controller.process_user_response(question, subtasks, taskname)
                     logging.info("[RE-PLANNING BASED ON USER RESPONSE]")
-                    # 先判断是否需要replan
-                    need_replan, reason = robot_controller.user_response_handler.init_response(user_response)
                     logging.info('REPLAN?: %s', need_replan)
                     logging.info('Reason: %s', reason)
                     if need_replan:
                         # old_subgoals = robot_controller.task_planner.subgoals
+                        qa_history = robot_controller.get_qa_history()
                         new_subtasks = robot_controller.task_planner.replan_subtasks_based_on_user_response(
-                            taskname, observation, robot_controller.last_question, user_response, subtasks
+                            taskname, observation, qa_history, subtasks
                         )
                         robot_controller.task_planner.subgoals = new_subtasks
-                        logging.info("[REPLAN] Old subgoals: %s", subtasks)
-                        logging.info("[REPLAN] New subgoals: %s", new_subtasks)
-                        robot_controller.add_memory(f"{new_subtasks}", "planning")
+                        logging.info("[REPLAN] Old subtasks: %s", subtasks)
+                        logging.info("[REPLAN] New subtasks: %s", new_subtasks)
                         subtasks = new_subtasks
                         # 你可以在此处继续后续执行新规划的逻辑
                     else:
@@ -1726,7 +1972,7 @@ if __name__=="__main__":
                 if attempt == max_retries - 1: 
                     logging.warning("[RETRY %d TIMES, JUMP THE TASK]", max_retries)
                     error_paths.append(origin_path)  
-                    save_data_to_json(error_paths,"./wrong_generte_path_list.json")
+                    save_data_to_json(error_paths, os.path.join(get_task_planner_path(), "wrong_generte_path_list.json"))
                     break  # Exit the retry loop for this task
         
         # Stop the controller after all attempts for this task
@@ -1736,3 +1982,7 @@ if __name__=="__main__":
     # All tasks completed
     logging.info("All tasks completed successfully!")
     logging.info(f"Error paths saved to: ./wrong_generte_path_list.json")
+
+
+if __name__=="__main__":
+    main()

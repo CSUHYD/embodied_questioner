@@ -29,11 +29,11 @@
     },
     "general_plan_question": {
         "systext": "You are a robot assistant. Your job is to help clarify or optimize the initial plan for a high-level task.",
-        "usertext": "The current high-level task is: {taskname}.\nYour initial observation is: {observation}\nThe initial plan is as follows:\n{subgoals}\nBased on this observation and plan, what is a general question you would ask the user to help clarify or improve the plan before execution? Please answer in the format:\nQUESTION: [your question]"
+        "usertext": "The current high-level task is: {taskname}.\nYour initial observation is: {observation}\nThe initial plan is as follows:\n{subtasks}\nBased on this observation and plan, what is a general question you would ask the user to help clarify or improve the plan before execution? Please answer in the format:\nQUESTION: [your question]"
     },
     "user_response_replan_judge": {
         "systext": "You are a robot assistant. Your job is to decide whether the robot should replan its task based on the user's answer.",
-        "usertext": "You are currently assisting with the following task: {taskname}.\n\nYour current plan is:\n{plan}\nHere is a summary of your recent Q&A history with the user:\n{memory}\n\nThe user has just provided the following answer:\n{user_response}\n\nGiven all of the above, do you think you should replan your task before proceeding? Please answer in the following format:\nREPLAN: [yes/no]\nREASON: [your reason]"
+        "usertext": "You are currently assisting with the following task: {taskname}.\n\nYour current plan is:\n{plan}\n\nThe user has just provided the following answer:\n{user_response}\n\nBased on the user's response, do you think you should replan your task before proceeding? Please answer in the following format:\nREPLAN: [yes/no]\nREASON: [your reason]"
     },
     "placement_ranking": {
         "systext": "You are a mobile robot located in a room. Your task is {taskname}. Based on the task requirements, the objects you need to find now are: {target}",
@@ -49,10 +49,18 @@
     },
     "task_verification": {
         "systext": "You are a mobile robot assistant. Your job is to verify whether a given task has been completed successfully by examining the current scene.",
-        "usertext": "I was asked to complete the following task: {taskname}\n\nThe original plan was:\n{original_plan}\n\nPlease examine the current image and determine if the task has been completed successfully.\n\nConsider the following:\n1. Are the required objects in their expected final positions?\n2. Has the main objective been achieved?\n3. Are there any obvious signs that the task is incomplete?\n\nPlease respond in the following format:\nSUCCESS: [yes/no]\nREASON: [brief explanation of why the task succeeded or failed]\nCONFIDENCE: [high/medium/low]\n\nExample responses:\nSUCCESS: yes\nREASON: The apple is now successfully placed on the plate as requested.\nCONFIDENCE: high\n\nSUCCESS: no\nREASON: The apple is visible but still on the table, not on the plate.\nCONFIDENCE: high"
+        "usertext": "I was asked to complete the following task: {taskname}\n\nThe original plan was:\n{original_plan}\n\nPlease examine the current image and determine if the task has been completed successfully.\n\nConsider the following:\n1. Are the required objects in their expected final positions?\n2. Has the main objective been achieved?\n3. Are there any obvious signs that the task is incomplete?\n\nPlease respond in the following format:\nSUCCESS: [yes/no]\nREASON: [brief explanation of why the task succeeded or failed]\nCONFIDENCE: [high/medium/low]"
     },
     "high_level_action_decomposition": {
         "systext": "You are a mobile robot action planner. Your job is to decompose high-level actions (like 'clean', 'cook', 'heat') into sequences of atomic robot actions that can be directly executed.",
         "usertext": "I need to decompose the high-level action '{action}' for object '{object_type}' into a sequence of atomic actions.\n\nContext: {context}\n\nAvailable atomic actions: {supported_actions}\n\nIMPORTANT RULES:\n1. Break down the high-level action into necessary preparation steps and the actual action\n2. Consider what tools/locations are typically needed for this action\n3. Include search and navigation steps as needed\n4. The sequence should be realistic and follow logical order\n5. Output each atomic action as: ACTION OBJECT_TYPE [TARGET_OBJECT]\n\nExamples:\n\nHigh-level: clean tomato\nDecomposition:\n<Action1> search sink </Action1>\n<Action2> navigate sink </Action2>\n<Action3> search tomato </Action3>\n<Action4> pick_up tomato </Action4>\n<Action5> put tomato sink </Action5>\n<Action6> toggle_on faucet </Action6>\n<Action7> clean tomato </Action7>\n<Action8> toggle_off faucet </Action8>\n\nHigh-level: heat food\nDecomposition:\n<Action1> search microwave </Action1>\n<Action2> navigate microwave </Action2>\n<Action3> open microwave </Action3>\n<Action4> search food </Action4>\n<Action5> pick_up food </Action5>\n<Action6> put food microwave </Action6>\n<Action7> close microwave </Action7>\n<Action8> toggle_on microwave </Action8>\n\nNow decompose: {action} {object_type}"
+    },
+    "decision_question_judge": {
+        "systext": "You are a robot assistant. Your job is to decide whether you need to ask the user a question before executing a specific action.",
+        "usertext": "You are working on the task: {taskname}\n\nYou are about to execute: {decision}\n\nRemaining actions: {remaining_decisions}\n\nAvailable objects: {navigable_objects}\n\nPrevious Q&A history:\n{qa_history}\n\nDo you need to ask the user a question before proceeding with this action? Consider scenarios like:\n- Uncertainty about object location or state\n- Multiple possible approaches\n- Potential safety concerns\n- Need for user preference\n\nPlease answer:\nASK: [yes/no]\nREASON: [brief explanation]"
+    },
+    "decision_specific_question": {
+        "systext": "You are a robot assistant. Your job is to generate a specific question about the current action to help clarify how to proceed.",
+        "usertext": "You are working on the task: {taskname}\n\nYou are about to execute: {decision}\n\nRemaining actions: {remaining_decisions}\n\nAvailable objects: {navigable_objects}\n\nPrevious Q&A history:\n{qa_history}\n\nGenerate a specific question to ask the user about this action. The question should help clarify:\n- How to approach this specific action\n- Which objects to prioritize\n- Any preferences or special requirements\n\nPlease provide your question in the format:\nQUESTION: [your specific question]"
     }
 }

@@ -1,0 +1,13 @@
+{
+  "task": "put tomato on plate",
+  "success": true,
+  "reason": "The tomato is clearly visible on the plate, which is placed on a stable surface. The main objective of placing the tomato on the plate has been achieved, and all required objects are in their expected final positions.",
+  "confidence": "high",
+  "original_plan": [
+    "Search the environment for a tomato.",
+    "Locate and pick up the tomato.",
+    "Search the environment for a plate.",
+    "Place the tomato on the plate.",
+    "Ensure the plate with the tomato is placed in a stable location."
+  ]
+}
