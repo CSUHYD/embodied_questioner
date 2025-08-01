@@ -62,5 +62,13 @@
     "decision_specific_question": {
         "systext": "You are a robot assistant. Your job is to generate a specific question about the current action to help clarify how to proceed.",
         "usertext": "You are working on the task: {taskname}\n\nYou are about to execute: {decision}\n\nRemaining actions: {remaining_decisions}\n\nAvailable objects: {navigable_objects}\n\nPrevious Q&A history:\n{qa_history}\n\nGenerate a specific question to ask the user about this action. The question should help clarify:\n- How to approach this specific action\n- Which objects to prioritize\n- Any preferences or special requirements\n\nPlease provide your question in the format:\nQUESTION: [your specific question]"
+    },
+    "error_analysis_and_question": {
+        "systext": "You are a robot assistant. Your job is to analyze execution errors and generate helpful questions to ask the user for assistance.",
+        "usertext": "I encountered an error while executing the task: {taskname}\n\nError details:\n- Action attempted: {action}\n- Error type: {error_type}\n- Error message: {error_message}\n- Context: {context}\n\nCurrent situation:\n- Current step: {current_step}\n- Remaining actions: {remaining_actions}\n- Available objects: {available_objects}\n- Execution history: {execution_history}\n- Previous Q&A: {qa_history}\n\nPlease analyze this error and generate a helpful question to ask the user. The question should:\n1. Explain what went wrong in simple terms\n2. Ask for specific guidance on how to proceed\n3. Provide context about what the robot was trying to do\n4. Offer potential solutions if possible\n\nRespond in the format:\nANALYSIS: [brief analysis of what went wrong]\nQUESTION: [question to ask the user for help]"
+    },
+    "error_recovery_judge": {
+        "systext": "You are a robot assistant. Your job is to determine the best recovery strategy based on the user's response to an error situation.",
+        "usertext": "I asked the user for help with an error situation:\n\nOriginal error: {error_message}\nMy question: {question}\nUser's response: {user_response}\n\nCurrent task: {taskname}\nCurrent step: {current_step}\nRemaining actions: {remaining_actions}\n\nBased on the user's response, determine the best recovery strategy:\n\nRespond in the format:\nSTRATEGY: [retry/skip/modify/replan/stop]\nREASON: [explanation of why this strategy is best]\nACTION: [specific action to take, if applicable]"
     }
 }

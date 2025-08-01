@@ -690,6 +690,61 @@ class TaskPlanner:
         reason_m = re.search(r'REASON:\s*(.*)', result)
         reason = reason_m.group(1).strip() if reason_m else result.strip()
         return need_replan, reason
+    
+    def determine_recovery_strategy(self, error_info, question, user_response, taskname, current_step, remaining_actions):
+        """
+        根据用户回答确定恢复策略
+        
+        Args:
+            error_info: 错误信息字典
+            question: 向用户提出的问题
+            user_response: 用户的回答
+            taskname: 任务名称
+            current_step: 当前步骤
+            remaining_actions: 剩余动作列表
+            
+        Returns:
+            dict: 包含strategy, reason, action的恢复信息
+        """
+        try:
+            # 准备prompt变量
+            prompt_cfg = self.config.get("error_recovery_judge", {})
+            systext = prompt_cfg.get("systext", "You are a robot assistant determining recovery strategies.")
+            usertext = prompt_cfg.get("usertext", "").format(
+                error_message=error_info.get('error_message', 'unknown error'),
+                question=question,
+                user_response=user_response,
+                taskname=taskname,
+                current_step=current_step or 'unknown',
+                remaining_actions=str(remaining_actions) if remaining_actions else 'none'
+            )
+            
+            # 调用VLM确定策略
+            llmapi = VLMAPI(self.model)
+            result = llmapi.vlm_request(systext, usertext)
+            
+            # 解析结果
+            strategy_match = re.search(r'STRATEGY:\s*(.*?)(?=REASON:|$)', result, re.DOTALL)
+            reason_match = re.search(r'REASON:\s*(.*?)(?=ACTION:|$)', result, re.DOTALL)
+            action_match = re.search(r'ACTION:\s*(.*?)$', result, re.DOTALL)
+            
+            strategy = strategy_match.group(1).strip() if strategy_match else "retry"
+            reason = reason_match.group(1).strip() if reason_match else "Default recovery strategy"
+            action = action_match.group(1).strip() if action_match else ""
+            
+            return {
+                'strategy': strategy,
+                'reason': reason,
+                'action': action
+            }
+            
+        except Exception as e:
+            logging.error(f"[ERROR RECOVERY] Failed to determine strategy: {e}")
+            return {
+                'strategy': 'retry',
+                'reason': f'Default due to analysis error: {e}',
+                'action': ''
+            }
 
 class ObservationGenerator:
     def __init__(self, model, config=None):
@@ -876,6 +931,57 @@ class QuestionAnswerHandler:
         if question_match:
             return question_match.group(1).strip()
         return result.strip()
+    
+    def generate_error_analysis_question(self, error_info, taskname, current_step, remaining_actions, 
+                                       available_objects, execution_history, qa_history):
+        """
+        生成错误分析和用户问题
+        
+        Args:
+            error_info: 错误信息字典
+            taskname: 任务名称
+            current_step: 当前步骤
+            remaining_actions: 剩余动作列表
+            available_objects: 可用对象列表
+            execution_history: 执行历史摘要
+            qa_history: 问答历史
+            
+        Returns:
+            tuple: (analysis, question)
+        """
+        try:
+            # 准备prompt变量
+            prompt_cfg = self.config.get("error_analysis_and_question", {})
+            systext = prompt_cfg.get("systext", "You are a robot assistant analyzing execution errors.")
+            usertext = prompt_cfg.get("usertext", "").format(
+                taskname=taskname,
+                action=error_info.get('action', 'unknown'),
+                error_type=error_info.get('error_type', 'unknown'),
+                error_message=error_info.get('error_message', 'unknown error'),
+                context=str(error_info.get('context', {})),
+                current_step=current_step or 'unknown',
+                remaining_actions=str(remaining_actions) if remaining_actions else 'none',
+                available_objects=', '.join(available_objects),
+                execution_history=execution_history,
+                qa_history=qa_history if qa_history else 'No previous Q&A'
+            )
+            
+            # 调用VLM生成分析和问题
+            llmapi = VLMAPI(self.model)
+            result = llmapi.vlm_request(systext, usertext)
+            
+            # 解析结果
+            analysis_match = re.search(r'ANALYSIS:\s*(.*?)(?=QUESTION:|$)', result, re.DOTALL)
+            question_match = re.search(r'QUESTION:\s*(.*?)$', result, re.DOTALL)
+            
+            analysis = analysis_match.group(1).strip() if analysis_match else "Error analysis not available"
+            question = question_match.group(1).strip() if question_match else None
+            
+            return analysis, question
+            
+        except Exception as e:
+            logging.error(f"[ERROR ANALYSIS] Failed to generate analysis: {e}")
+            return f"Error occurred: {error_info.get('error_message', 'unknown')}", None
 
 
 class TaskVerificationHandler:
@@ -1233,6 +1339,86 @@ class RobotController:
         logging.info(f"[DECISION QUESTION] Generated question for '{decision.get('decisionmaking')}': {question}")
         return question
 
+    # ==================== 异常处理和错误恢复 ====================
+    
+    def handle_execution_error(self, error_info, taskname, current_step=None, remaining_actions=None):
+        """
+        处理执行过程中的异常，主动向用户提问请求帮助
+        
+        Args:
+            error_info: 错误信息字典，包含error_type, error_message, context等
+            taskname: 当前任务名称  
+            current_step: 当前执行步骤
+            remaining_actions: 剩余待执行的动作列表
+            
+        Returns:
+            dict: 包含recovery_strategy, user_response等的恢复信息
+        """
+        try:
+            # 记录错误到SessionManager
+            self.log_failure(
+                failure_type=error_info.get('error_type', 'execution_error'),
+                description=error_info.get('error_message', 'Unknown error occurred'),
+                context={
+                    'taskname': taskname,
+                    'current_step': current_step,
+                    'remaining_actions': remaining_actions,
+                    **error_info.get('context', {})
+                }
+            )
+            
+            # 准备上下文信息
+            navigable_list = self.get_navigable_list()
+            available_objects = [item["objectType"] for item in navigable_list]
+            execution_history = self.get_execution_history_summary(5)
+            qa_history = self.get_qa_history(5)
+            
+            # 生成错误分析和用户问题
+            analysis, question = self.qa_handler.generate_error_analysis_question(
+                error_info, taskname, current_step, remaining_actions,
+                available_objects, execution_history, qa_history
+            )
+            
+            if question:
+                logging.info(f"[ERROR HANDLING] Analysis: {analysis}")
+                logging.info(f"[ERROR HANDLING] Asking user for help: {question}")
+                
+                # 获取用户回答
+                user_response = self.qa_handler.get_user_response_with_history(question)
+                
+                # 记录错误处理的问答
+                self.add_qa_record(
+                    question=question,
+                    answer=user_response,
+                    context=f"error_handling_{error_info.get('error_type', 'unknown')}",
+                    question_type="error_assistance"
+                )
+                
+                # 根据用户回答确定恢复策略
+                recovery_info = self.task_planner.determine_recovery_strategy(
+                    error_info, question, user_response, taskname, current_step, remaining_actions
+                )
+                
+                logging.info(f"[ERROR RECOVERY] Strategy: {recovery_info.get('strategy', 'unknown')}")
+                logging.info(f"[ERROR RECOVERY] Reason: {recovery_info.get('reason', 'no reason')}")
+                
+                return {
+                    'success': True,
+                    'analysis': analysis,
+                    'question': question,
+                    'user_response': user_response,
+                    'recovery_strategy': recovery_info.get('strategy', 'retry'),
+                    'recovery_reason': recovery_info.get('reason', ''),
+                    'recovery_action': recovery_info.get('action', '')
+                }
+            else:
+                logging.error("[ERROR HANDLING] Failed to generate error analysis question")
+                return {'success': False, 'error': 'Failed to generate question'}
+                
+        except Exception as e:
+            logging.error(f"[ERROR HANDLING] Exception in error handler: {e}")
+            return {'success': False, 'error': f'Error handler failed: {e}'}
+
     def rank_possible_placement_locations(self, taskname, target, navigable_list, qa_history="", place_num=3):
         """
         输入目标、环境描述、可导航物体列表，调用VLM/LLM排序最有可能放置目标的位置
@@ -1541,8 +1727,44 @@ class RobotController:
                                            max_num=5,
                                            qa_history=qa_history)
                 if not found:
-                    logging.error(f"[ERROR] Search failed for {object_type}, stopping execution.")
-                    break
+                    logging.error(f"[ERROR] Search failed for {object_type}, requesting user assistance.")
+                    
+                    # 调用异常处理函数请求用户帮助
+                    error_info = {
+                        'error_type': 'search_failure',
+                        'error_message': f'Could not find {object_type} after searching possible locations',
+                        'action': f'search {object_type}',
+                        'context': {'object_type': object_type, 'taskname': taskname}
+                    }
+                    remaining_actions = [d.get('decisionmaking', f"{d.get('action', '')} {d.get('objectType', '')}") 
+                                       for d in decisions[decision_index+1:]]
+                    
+                    recovery_info = self.handle_execution_error(
+                        error_info, taskname, 
+                        current_step=f"search {object_type}", 
+                        remaining_actions=remaining_actions
+                    )
+                    
+                    if recovery_info.get('success'):
+                        strategy = recovery_info.get('recovery_strategy', 'stop')
+                        logging.info(f"[ERROR RECOVERY] User advised strategy: {strategy}")
+                        
+                        if strategy.lower() == 'skip':
+                            logging.info(f"[ERROR RECOVERY] Skipping search for {object_type} as advised by user")
+                            # 继续下一个决策
+                        elif strategy.lower() == 'retry':
+                            logging.info(f"[ERROR RECOVERY] Retrying search for {object_type} as advised by user")
+                            # 继续当前决策（不增加decision_index）
+                            continue
+                        elif strategy.lower() in ['replan', 'modify']:
+                            logging.info(f"[ERROR RECOVERY] User suggests replanning, but not implemented yet")
+                            break
+                        else:
+                            logging.info(f"[ERROR RECOVERY] Stopping execution as advised by user")
+                            break
+                    else:
+                        logging.error(f"[ERROR RECOVERY] Failed to get user assistance, stopping execution")
+                        break
 
             # 2. 导航类动作
             elif action in ["navigate", "navigate to", "goto", "go to", "move to"]:
@@ -1551,7 +1773,7 @@ class RobotController:
                     self.navigate_to_object(object_id)
                     self.update_metadata()
                 else:
-                    logging.warning(f"[WARNING] Cannot navigate to {object_type}, as it is not in the navigable list.")
+                    logging.error(f"[WARNING] Cannot navigate to {object_type}, as it is not in the navigable list.")
 
             # 3. 交互类动作
             elif action in ["pickup", "pick up", "pick_up", "open", "close", "toggle", "toggle_on", "toggle_off", 
@@ -1666,8 +1888,49 @@ class RobotController:
                     # Check controller's last action success instead of relying on return value
                     if not self.controller.last_event.metadata.get("lastActionSuccess", False):
                         error_message = self.controller.last_event.metadata.get("errorMessage", "Unknown error")
-                        logging.error(f"[ERROR] Action {action} failed on {object_type}. Error: {error_message}")
-                        break
+                        logging.error(f"[ERROR] Action {action} failed on {object_type}. Error: {error_message}, requesting user assistance.")
+                        
+                        # 调用异常处理函数请求用户帮助
+                        error_info = {
+                            'error_type': 'action_failure',
+                            'error_message': f'{action} failed on {object_type}: {error_message}',
+                            'action': f'{action} {object_type}',
+                            'context': {
+                                'object_type': object_type, 
+                                'object_id': object_id,
+                                'taskname': taskname,
+                                'system_error': error_message
+                            }
+                        }
+                        remaining_actions = [d.get('decisionmaking', f"{d.get('action', '')} {d.get('objectType', '')}") 
+                                           for d in decisions[decision_index+1:]]
+                        
+                        recovery_info = self.handle_execution_error(
+                            error_info, taskname, 
+                            current_step=f"{action} {object_type}", 
+                            remaining_actions=remaining_actions
+                        )
+                        
+                        if recovery_info.get('success'):
+                            strategy = recovery_info.get('recovery_strategy', 'stop')
+                            logging.info(f"[ERROR RECOVERY] User advised strategy: {strategy}")
+                            
+                            if strategy.lower() == 'skip':
+                                logging.info(f"[ERROR RECOVERY] Skipping {action} on {object_type} as advised by user")
+                                # 继续下一个决策
+                            elif strategy.lower() == 'retry':
+                                logging.info(f"[ERROR RECOVERY] Retrying {action} on {object_type} as advised by user")
+                                # 继续当前决策（不增加decision_index）
+                                continue
+                            elif strategy.lower() in ['replan', 'modify']:
+                                logging.info(f"[ERROR RECOVERY] User suggests replanning, but not implemented yet")
+                                break
+                            else:
+                                logging.info(f"[ERROR RECOVERY] Stopping execution as advised by user")
+                                break
+                        else:
+                            logging.error(f"[ERROR RECOVERY] Failed to get user assistance, stopping execution")
+                            break
                     else:
                         logging.info(f"[SUCCESS] {action} on {object_type} completed successfully")
                         # 记录成功交互的对象ID，以便后续操作使用相同对象
@@ -1715,8 +1978,48 @@ class RobotController:
                                 break
                 
                 if not target_object_id:
-                    logging.error(f"[ERROR] Cannot find receptacle {target_object_type} to put object on/in.")
-                    break
+                    logging.error(f"[ERROR] Cannot find receptacle {target_object_type} to put object on/in, requesting user assistance.")
+                    
+                    # 调用异常处理函数请求用户帮助
+                    error_info = {
+                        'error_type': 'target_not_found',
+                        'error_message': f'Cannot find receptacle {target_object_type} to put {held_object["objectType"]} on/in',
+                        'action': f'put {held_object["objectType"]} {target_object_type}',
+                        'context': {
+                            'held_object': held_object['objectType'],
+                            'target_object_type': target_object_type,
+                            'taskname': taskname
+                        }
+                    }
+                    remaining_actions = [d.get('decisionmaking', f"{d.get('action', '')} {d.get('objectType', '')}") 
+                                       for d in decisions[decision_index+1:]]
+                    
+                    recovery_info = self.handle_execution_error(
+                        error_info, taskname, 
+                        current_step=f"put {held_object['objectType']} {target_object_type}", 
+                        remaining_actions=remaining_actions
+                    )
+                    
+                    if recovery_info.get('success'):
+                        strategy = recovery_info.get('recovery_strategy', 'stop')
+                        logging.info(f"[ERROR RECOVERY] User advised strategy: {strategy}")
+                        
+                        if strategy.lower() == 'skip':
+                            logging.info(f"[ERROR RECOVERY] Skipping put action as advised by user")
+                            # 继续下一个决策
+                        elif strategy.lower() == 'retry':
+                            logging.info(f"[ERROR RECOVERY] Retrying put action as advised by user")
+                            # 继续当前决策（不增加decision_index）
+                            continue
+                        elif strategy.lower() in ['replan', 'modify']:
+                            logging.info(f"[ERROR RECOVERY] User suggests replanning, but not implemented yet")
+                            break
+                        else:
+                            logging.info(f"[ERROR RECOVERY] Stopping execution as advised by user")
+                            break
+                    else:
+                        logging.error(f"[ERROR RECOVERY] Failed to get user assistance, stopping execution")
+                        break
                 
                 # 4.3 导航到目标位置
                 self.navigate_to_object(target_object_id)
@@ -1755,7 +2058,7 @@ class RobotController:
 
             # 4. 未知动作
             else:
-                logging.warning(f"[SKIP] Action {action} not recognized for auto-execution.")
+                logging.error(f"[ERROR] Action {action} not recognized for auto-execution.")
             
             # 步骤5: 递增决策索引，继续下一个决策
             decision_index += 1
