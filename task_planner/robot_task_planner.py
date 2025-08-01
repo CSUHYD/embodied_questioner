@@ -1,7 +1,7 @@
 from ai2thor.controller import Controller
 import math
 import re
-import time
+# import time  # 移除，不再需要用于qa_history时间戳
 import threading
 import sys
 import os
@@ -19,6 +19,9 @@ from vlmCall_ollama import VLMAPI
 from utils import save_data_to_json,save_image,clear_folder,load_json,get_volume_distance_rate
 from baseAction import BaseAction
 from RocAgent import RocAgent
+
+# 导入SessionManager
+from session_manager import SessionManager
 
 
 def get_data_engine_path():
@@ -533,13 +536,14 @@ class TaskPlanner:
             
         return decisions
 
-    def subtasks_to_decisions(self, subtasks):
+    def subtasks_to_decisions(self, subtasks, qa_history=""):
         """
         将一组subtasks一次性转换为可执行的decisions序列。
         这个方法会考虑整体任务上下文，生成完整的执行计划。
 
         Args:
             subtasks: 子任务列表，每个子任务是一个字符串
+            qa_history: 问答历史，用于优化决策生成
 
         Returns:
             list: 可执行的decisions列表
@@ -558,7 +562,8 @@ class TaskPlanner:
         systext = prompt_cfg.get("systext", "")
         usertext = prompt_cfg.get("usertext", "").format(
             subtasks="\n".join(f"- {task}" for task in subtasks),
-            supported_actions=", ".join(supported_actions)
+            supported_actions=", ".join(supported_actions),
+            qa_history=qa_history if qa_history else "No previous Q&A interactions"
         )
 
         # 3. 调用VLM获取执行计划
@@ -718,7 +723,6 @@ class QuestionAnswerHandler:
         self.taskname = taskname
         self.plan = plan
         self.config = config or PROMPT_CONFIG
-        self.qa_history = []  # 问答历史记录
         self.last_question = None
         
     def update_context(self, taskname=None, plan=None):
@@ -771,14 +775,6 @@ class QuestionAnswerHandler:
             print(f"🤖：{question}")
         user_response = input("😁：请输入你的回答：")
         
-        # 记录问答对
-        if question:
-            self.qa_history.append({
-                "question": question,
-                "answer": user_response,
-                "timestamp": time.time()
-            })
-        
         return user_response
 
     def get_user_response_with_history(self, question):
@@ -789,28 +785,7 @@ class QuestionAnswerHandler:
         user_response = self.get_user_response(question)
         return user_response
 
-    def get_qa_history(self, max_pairs=10):
-        """
-        获取问答历史，格式化为字符串
-        """
-        recent_history = self.qa_history[-max_pairs:] if self.qa_history else []
-        qa_pairs = [f"Q: {item['question']}\nA: {item['answer']}" for item in recent_history]
-        return "\n".join(qa_pairs)
-
-    def clear_qa_history(self):
-        """清空问答历史"""
-        self.qa_history = []
-        self.last_question = None
-
-    def add_qa_pair(self, question, answer):
-        """手动添加问答对到历史中"""
-        self.qa_history.append({
-            "question": question,
-            "answer": answer,
-            "timestamp": time.time()
-        })
-    
-    def should_ask_question_for_decision(self, taskname, decision, remaining_decisions, navigable_objects=None):
+    def should_ask_question_for_decision(self, taskname, decision, remaining_decisions, navigable_objects=None, qa_history=""):
         """
         判断是否需要针对当前决策提问
         
@@ -819,11 +794,14 @@ class QuestionAnswerHandler:
             decision: 当前要执行的决策
             remaining_decisions: 剩余的决策列表
             navigable_objects: 可导航的对象列表
+            qa_history: 问答历史，从外部传入
             
         Returns:
             tuple: (should_ask: bool, reason: str)
         """
-        qa_history = self.get_qa_history()
+        # 使用传入的qa_history，如果为空则使用空字符串
+        if not qa_history:
+            qa_history = ""
         
         # 准备prompt配置
         prompt_cfg = self.config.get("decision_question_judge", {})
@@ -1018,10 +996,16 @@ class RobotController:
         self.metadata = metadata
         self.model = model
         self.origin_path = origin_path
+        self.config = config
         self.observation_generator = ObservationGenerator(model, config)
         self.task_planner = TaskPlanner(model, config)
         self.qa_handler = QuestionAnswerHandler(model, config=config)
         self.verification_handler = TaskVerificationHandler(controller, model, self.observation_generator, origin_path)
+        
+        # 初始化SessionManager - 统一管理所有会话数据
+        session_save_path = os.path.join(origin_path, "session_logs") if origin_path else None
+        self.session_manager = SessionManager(save_path=session_save_path)
+        
         # 添加navigable_list相关属性
         self.navigable_list = []
         self.round = 1
@@ -1030,9 +1014,47 @@ class RobotController:
         self.failed_attempts = 0
         self.rocAgent=RocAgent(controller)
         self.recent_interactions = {}  # 记录最近交互的对象ID，格式: {object_type: object_id}
-        self.opened_containers_for_search = []  # 记录为搜索而打开的容器，需要在适当时机关闭  
+        self.opened_containers_for_search = []  # 记录为搜索而打开的容器，需要在适当时机关闭
 
-
+    # ==================== SessionManager 统一写入接口 ====================
+    
+    def add_qa_record(self, question: str, answer: str, context: str = None, question_type: str = "general") -> None:
+        """统一的问答记录写入接口"""
+        self.session_manager.add_qa_record(question, answer, context, question_type)
+    
+    def log_action_execution(self, action_type: str, action_params: dict, result: str, 
+                           success: bool, object_id: str = None, scene_info: dict = None,
+                           execution_time_ms: int = None) -> None:
+        """统一的执行记录写入接口"""
+        self.session_manager.add_execution_record(
+            action_type=action_type,
+            action_params=action_params,
+            result=result,
+            success=success,
+            object_id=object_id,
+            scene_info=scene_info,
+            execution_time_ms=execution_time_ms
+        )
+    
+    def log_failure(self, failure_type: str, description: str, context: dict, 
+                   recovery_attempted: bool = False, recovery_successful: bool = False) -> None:
+        """统一的失败记录写入接口"""
+        self.session_manager.add_failure_record(
+            failure_type=failure_type,
+            description=description,
+            context=context,
+            recovery_attempted=recovery_attempted,
+            recovery_successful=recovery_successful
+        )
+    
+    def get_execution_history_summary(self, max_actions: int = 10) -> str:
+        """获取执行历史摘要"""
+        return self.session_manager.get_execution_history_summary(max_actions)
+    
+    def start_new_round(self) -> None:
+        """开始新的执行轮次"""
+        self.session_manager.start_new_round()
+        self.round = self.session_manager.current_round
 
     def initial_navigable_list(self):
         """初始化可导航对象列表"""
@@ -1129,8 +1151,9 @@ class RobotController:
         处理完整的用户问答交互流程
         返回 (user_response, need_replan, reason)
         """
-        # 获取用户回答（自动记录到qa_history）
+        # 获取用户回答并记录到SessionManager
         user_response = self.qa_handler.get_user_response_with_history(question)
+        self.add_qa_record(question, user_response, context="decision_making", question_type="decision_clarification")
         logging.info("[USER RESPONSE] %s", user_response)
         
         # 使用TaskPlanner判断是否需要重规划
@@ -1146,19 +1169,24 @@ class RobotController:
         """
         获取问答历史，格式化为字符串。
         """
-        return self.qa_handler.get_qa_history()
+        return self.session_manager.get_qa_history_string()
 
     def ask_clarification_question(self, taskname, current_step, issue_description):
         """
-        生成并处理澄清问题
+        生成并处理澄清问题，返回用户回答
         """
         self.qa_handler.update_context(taskname=taskname, plan=None)
         question = self.qa_handler.generate_clarification_question(taskname, current_step, issue_description)
         if question:
             logging.info("[CLARIFICATION QUESTION] %s", question)
-        return question
+            # 获取用户回答并记录到SessionManager
+            user_response = self.qa_handler.get_user_response_with_history(question)
+            self.add_qa_record(question, user_response, context=f"clarification_{current_step}", question_type="clarification")
+            logging.info("[CLARIFICATION RESPONSE] %s", user_response)
+            return user_response
+        return None
 
-    def should_ask_question_for_decision(self, taskname, decision, remaining_decisions):
+    def should_ask_question_for_decision(self, taskname, decision, remaining_decisions, qa_history=""):
         """
         判断是否需要针对当前决策提问
         
@@ -1166,6 +1194,7 @@ class RobotController:
             taskname: 任务名称
             decision: 当前要执行的决策
             remaining_decisions: 剩余的决策列表
+            qa_history: 问答历史，用于判断是否需要提问
             
         Returns:
             bool: 是否需要提问
@@ -1174,7 +1203,7 @@ class RobotController:
         navigable_objects = [item["objectType"] for item in navigable_list]
         
         should_ask, reason = self.qa_handler.should_ask_question_for_decision(
-            taskname, decision, remaining_decisions, navigable_objects
+            taskname, decision, remaining_decisions, navigable_objects, qa_history
         )
         
         if should_ask:
@@ -1292,7 +1321,7 @@ class RobotController:
         self.metadata = self.controller.last_event.metadata
         return self.metadata
 
-    def search_for_object(self, taskname, target, max_num=3, qa_history=None):
+    def search_for_object(self, taskname, target, max_num=1, qa_history=None):
         """
         搜索目标物体的位置。
         Args:
@@ -1458,7 +1487,8 @@ class RobotController:
             remaining_decisions = decisions[decision_index + 1:]
             
             # 步骤1: 判断是否需要针对当前决策提问
-            if self.should_ask_question_for_decision(taskname, decision, remaining_decisions):
+            qa_history = self.get_qa_history()
+            if self.should_ask_question_for_decision(taskname, decision, remaining_decisions, qa_history):
                 # 生成具体问题
                 question = self.generate_decision_question(taskname, decision, remaining_decisions)
                 
@@ -1482,7 +1512,8 @@ class RobotController:
                     )
                     
                     # 将新的subtasks转换为decisions格式
-                    new_decisions = self.task_planner.subtasks_to_decisions(new_subtasks)
+                    qa_history = self.get_qa_history()
+                    new_decisions = self.task_planner.subtasks_to_decisions(new_subtasks, qa_history)
                     
                     # 步骤3: 更新decisions列表
                     # 保留已执行的decisions + 新规划的decisions
@@ -1925,7 +1956,8 @@ def main():
 
 
                 # 步骤4：底层任务规划：把subtask细化为可执的 decisions
-                decisions = robot_controller.task_planner.subtasks_to_decisions(subtasks)
+                qa_history = robot_controller.get_qa_history()
+                decisions = robot_controller.task_planner.subtasks_to_decisions(subtasks, qa_history)
                 # decisions = subtasks
                 logging.info("[SUBTASKS WITH DECISION] %s", decisions)
                 robot_controller.execute_decisions(taskname, decisions)
