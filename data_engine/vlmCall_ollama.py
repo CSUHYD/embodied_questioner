@@ -85,8 +85,8 @@ class VLMAPI:
             max_tokens: 最大token数
             retry_limit: 重试次数
         """
-        print("===== VLM SYSTEXT =====\n%s", systext)
-        print("===== VLM USERTEXT =====\n%s", usertext)
+        # print("===== VLM SYSTEXT =====\n%s", systext)
+        # print("===== VLM USERTEXT =====\n%s", usertext)
         
         # 构建完整的提示文本
         full_prompt = f"{systext}\n\n{usertext}"

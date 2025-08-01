@@ -1,13 +1,12 @@
 {
   "task": "put tomato on plate",
   "success": true,
-  "reason": "The tomato is clearly visible on the plate, which is placed on a stable surface. The main objective of placing the tomato on the plate has been achieved, and all required objects are in their expected final positions.",
+  "reason": "The tomato is clearly placed on a black plate, which is located near the sink. This matches the goal of the task, which was to place the tomato on a plate near the sink. All steps in the plan have been executed as intended.",
   "confidence": "high",
   "original_plan": [
-    "Search the environment for a tomato.",
-    "Locate and pick up the tomato.",
-    "Search the environment for a plate.",
-    "Place the tomato on the plate.",
-    "Ensure the plate with the tomato is placed in a stable location."
+    "Find the tomato on the cutting board.",
+    "Pick up the tomato.",
+    "Locate a plate near the sink.",
+    "Place the tomato on the plate near the sink."
   ]
 }

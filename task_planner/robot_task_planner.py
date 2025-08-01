@@ -410,8 +410,38 @@ class TaskPlanner:
         )
         llmapi = VLMAPI(self.model)
         result = llmapi.vlm_request(systext, usertext)
+        
+        # Debug: log the LLM response to understand parsing issues
+        logging.info(f"[DEBUG] LLM response for replan_subtasks_based_on_user_response: {result}")
+        
         matches = parse_xml_tags(result, "Subtask")
+        logging.info(f"[DEBUG] Parsed matches: {matches}")
+        
         new_subtasks = [content for _, content in matches]
+        
+        # Fallback parsing if XML parsing fails
+        if not new_subtasks:
+            logging.warning(f"[DEBUG] XML parsing failed, attempting fallback parsing")
+            # Try to extract content between <Subtask> tags without numbers
+            import re
+            fallback_pattern = r'<Subtask[^>]*>(.*?)</Subtask[^>]*>'
+            fallback_matches = re.findall(fallback_pattern, result, re.DOTALL)
+            if fallback_matches:
+                new_subtasks = [content.strip() for content in fallback_matches]
+                logging.info(f"[DEBUG] Fallback parsing found: {new_subtasks}")
+            else:
+                # If still no matches, try to extract lines that look like subtasks
+                lines = result.split('\n')
+                new_subtasks = []
+                for line in lines:
+                    line = line.strip()
+                    if line and not line.startswith(('REPLAN:', 'REASON:', 'ANALYSIS:', 'QUESTION:')):
+                        # Remove XML tags if present
+                        clean_line = re.sub(r'<[^>]*>', '', line).strip()
+                        if clean_line and len(clean_line) > 5:  # Filter out very short lines
+                            new_subtasks.append(clean_line)
+                logging.info(f"[DEBUG] Line-based parsing found: {new_subtasks}")
+        
         self.subtasks = new_subtasks
         return new_subtasks
 
@@ -731,6 +761,12 @@ class TaskPlanner:
             strategy = strategy_match.group(1).strip() if strategy_match else "retry"
             reason = reason_match.group(1).strip() if reason_match else "Default recovery strategy"
             action = action_match.group(1).strip() if action_match else ""
+            
+            # Clean up strategy value - remove extra whitespace and normalize
+            strategy = re.sub(r'\s+', ' ', strategy).strip().lower()
+            
+            logging.info(f"[DEBUG] Parsed strategy: '{strategy}', reason: '{reason}'")
+            logging.info(f"[DEBUG] Original LLM result: {result}")
             
             return {
                 'strategy': strategy,
@@ -1269,7 +1305,7 @@ class RobotController:
             user_response=user_response
         )
         
-        return user_response, need_replan, reason
+        return need_replan, reason
 
     def get_qa_history(self):
         """
@@ -1371,7 +1407,7 @@ class RobotController:
             navigable_list = self.get_navigable_list()
             available_objects = [item["objectType"] for item in navigable_list]
             execution_history = self.get_execution_history_summary(5)
-            qa_history = self.get_qa_history(5)
+            qa_history = self.get_qa_history()
             
             # 生成错误分析和用户问题
             analysis, question = self.qa_handler.generate_error_analysis_question(
@@ -1724,7 +1760,7 @@ class RobotController:
             if action in ["search", "find"]:
                 found = self.search_for_object(taskname=taskname,
                                            target=object_type,
-                                           max_num=5,
+                                           max_num=1,
                                            qa_history=qa_history)
                 if not found:
                     logging.error(f"[ERROR] Search failed for {object_type}, requesting user assistance.")
@@ -1749,16 +1785,34 @@ class RobotController:
                         strategy = recovery_info.get('recovery_strategy', 'stop')
                         logging.info(f"[ERROR RECOVERY] User advised strategy: {strategy}")
                         
-                        if strategy.lower() == 'skip':
+                        if strategy == 'skip':
                             logging.info(f"[ERROR RECOVERY] Skipping search for {object_type} as advised by user")
-                            # 继续下一个决策
-                        elif strategy.lower() == 'retry':
-                            logging.info(f"[ERROR RECOVERY] Retrying search for {object_type} as advised by user")
-                            # 继续当前决策（不增加decision_index）
+                            # 继续下一个决策，跳过当前失败的搜索
+                            decision_index += 1
                             continue
-                        elif strategy.lower() in ['replan', 'modify']:
-                            logging.info(f"[ERROR RECOVERY] User suggests replanning, but not implemented yet")
-                            break
+                        elif strategy == 'retry':
+                            logging.info(f"[ERROR RECOVERY] Retrying search for {object_type} as advised by user")
+                            # 继续当前决策（不增加decision_index），重试搜索
+                            continue
+                        elif strategy in ['replan', 'modify']:
+                            logging.info(f"[ERROR RECOVERY] User suggests replanning, implementing replan strategy")
+                            # 基于用户反馈重新规划剩余任务
+                            remaining_subtasks = [d.get("decisionmaking", f"{d.get('action', '')} {d.get('objectType', '')}") 
+                                                for d in decisions[decision_index:]]
+                            
+                            qa_history_for_replan = self.get_qa_history()
+                            new_subtasks = self.task_planner.replan_subtasks_based_on_user_response(
+                                taskname, "", qa_history_for_replan, remaining_subtasks
+                            )
+                            
+                            # 将新的subtasks转换为decisions格式
+                            qa_history = self.get_qa_history()
+                            new_decisions = self.task_planner.subtasks_to_decisions(new_subtasks, qa_history)
+                            
+                            # 更新decisions列表：保留已执行的 + 新规划的
+                            decisions = decisions[:decision_index] + new_decisions
+                            logging.info(f"[ERROR RECOVERY] Replanned decisions: {new_decisions}")
+                            continue
                         else:
                             logging.info(f"[ERROR RECOVERY] Stopping execution as advised by user")
                             break
@@ -1774,6 +1828,20 @@ class RobotController:
                     self.update_metadata()
                 else:
                     logging.error(f"[WARNING] Cannot navigate to {object_type}, as it is not in the navigable list.")
+                    error_info = {
+                        "error_type": "navigation_target_not_found",
+                        "error_message": f"Cannot navigate to {object_type}, as it is not in the navigable list.",
+                        "context": f"Attempted to navigate to {object_type}, but it was not found in the current navigable objects."
+                    }
+                    
+                    remaining_actions = [f"{d['action']} {d['object']}" 
+                                       for d in decisions[decision_index+1:]]
+                    
+                    recovery_info = self.handle_execution_error(
+                        error_info, taskname, 
+                        current_step=f"navigate to {object_type}", 
+                        remaining_actions=remaining_actions
+                    )
 
             # 3. 交互类动作
             elif action in ["pickup", "pick up", "pick_up", "open", "close", "toggle", "toggle_on", "toggle_off", 
@@ -1915,16 +1983,34 @@ class RobotController:
                             strategy = recovery_info.get('recovery_strategy', 'stop')
                             logging.info(f"[ERROR RECOVERY] User advised strategy: {strategy}")
                             
-                            if strategy.lower() == 'skip':
+                            if strategy == 'skip':
                                 logging.info(f"[ERROR RECOVERY] Skipping {action} on {object_type} as advised by user")
                                 # 继续下一个决策
-                            elif strategy.lower() == 'retry':
+                                decision_index += 1
+                                continue
+                            elif strategy == 'retry':
                                 logging.info(f"[ERROR RECOVERY] Retrying {action} on {object_type} as advised by user")
                                 # 继续当前决策（不增加decision_index）
                                 continue
-                            elif strategy.lower() in ['replan', 'modify']:
-                                logging.info(f"[ERROR RECOVERY] User suggests replanning, but not implemented yet")
-                                break
+                            elif strategy in ['replan', 'modify']:
+                                logging.info(f"[ERROR RECOVERY] User suggests replanning, implementing replan strategy")
+                                # 基于用户反馈重新规划剩余任务
+                                remaining_subtasks = [d.get("decisionmaking", f"{d.get('action', '')} {d.get('objectType', '')}") 
+                                                    for d in decisions[decision_index:]]
+                                
+                                qa_history_for_replan = self.get_qa_history()
+                                new_subtasks = self.task_planner.replan_subtasks_based_on_user_response(
+                                    taskname, "", qa_history_for_replan, remaining_subtasks
+                                )
+                                
+                                # 将新的subtasks转换为decisions格式
+                                qa_history = self.get_qa_history()
+                                new_decisions = self.task_planner.subtasks_to_decisions(new_subtasks, qa_history)
+                                
+                                # 更新decisions列表：保留已执行的 + 新规划的
+                                decisions = decisions[:decision_index] + new_decisions
+                                logging.info(f"[ERROR RECOVERY] Replanned decisions: {new_decisions}")
+                                continue
                             else:
                                 logging.info(f"[ERROR RECOVERY] Stopping execution as advised by user")
                                 break
@@ -2004,16 +2090,34 @@ class RobotController:
                         strategy = recovery_info.get('recovery_strategy', 'stop')
                         logging.info(f"[ERROR RECOVERY] User advised strategy: {strategy}")
                         
-                        if strategy.lower() == 'skip':
+                        if strategy == 'skip':
                             logging.info(f"[ERROR RECOVERY] Skipping put action as advised by user")
                             # 继续下一个决策
-                        elif strategy.lower() == 'retry':
+                            decision_index += 1
+                            continue
+                        elif strategy == 'retry':
                             logging.info(f"[ERROR RECOVERY] Retrying put action as advised by user")
                             # 继续当前决策（不增加decision_index）
                             continue
-                        elif strategy.lower() in ['replan', 'modify']:
-                            logging.info(f"[ERROR RECOVERY] User suggests replanning, but not implemented yet")
-                            break
+                        elif strategy in ['replan', 'modify']:
+                            logging.info(f"[ERROR RECOVERY] User suggests replanning, implementing replan strategy")
+                            # 基于用户反馈重新规划剩余任务
+                            remaining_subtasks = [d.get("decisionmaking", f"{d.get('action', '')} {d.get('objectType', '')}") 
+                                                for d in decisions[decision_index:]]
+                            
+                            qa_history_for_replan = self.get_qa_history()
+                            new_subtasks = self.task_planner.replan_subtasks_based_on_user_response(
+                                taskname, "", qa_history_for_replan, remaining_subtasks
+                            )
+                            
+                            # 将新的subtasks转换为decisions格式
+                            qa_history = self.get_qa_history()
+                            new_decisions = self.task_planner.subtasks_to_decisions(new_subtasks, qa_history)
+                            
+                            # 更新decisions列表：保留已执行的 + 新规划的
+                            decisions = decisions[:decision_index] + new_decisions
+                            logging.info(f"[ERROR RECOVERY] Replanned decisions: {new_decisions}")
+                            continue
                         else:
                             logging.info(f"[ERROR RECOVERY] Stopping execution as advised by user")
                             break
@@ -2239,7 +2343,7 @@ def main():
                 
                 if question:
                     # 处理用户问答交互
-                    user_response, need_replan, reason = robot_controller.process_user_response(question, subtasks, taskname)
+                    need_replan, reason = robot_controller.process_user_response(question, subtasks, taskname)
                     logging.info("[RE-PLANNING BASED ON USER RESPONSE]")
                     logging.info('REPLAN?: %s', need_replan)
                     logging.info('Reason: %s', reason)
@@ -2278,6 +2382,31 @@ def main():
                 else:
                     logging.warning(f"[VERIFICATION] ✗ Task may not be completed. (Confidence: {confidence})")
                     logging.warning(f"[VERIFICATION] Reason: {reason}")
+                    
+                    # 当验证失败时，请求用户帮助
+                    error_info = {
+                        "error_type": "task_verification_failed",
+                        "error_message": f"Task verification indicates the task may not be completed successfully. Confidence: {confidence}",
+                        "context": f"Verification reason: {reason}. The system checked the final state but detected potential issues with task completion."
+                    }
+                    
+                    recovery_info = robot_controller.task_planner.handle_execution_error(
+                        error_info, taskname,
+                        current_step="task verification",
+                        remaining_actions=[]
+                    )
+                    
+                    # 根据用户反馈处理验证失败的情况
+                    if recovery_info and recovery_info.get('strategy') == 'retry':
+                        logging.info("[VERIFICATION] User requested retry, re-running verification...")
+                        is_success, reason, confidence = robot_controller.verify_task_completion(
+                            taskname=taskname,
+                            original_plan=subtasks
+                        )
+                    elif recovery_info and recovery_info.get('strategy') == 'accept':
+                        logging.info("[VERIFICATION] User confirmed task completion despite verification concerns")
+                        is_success = True
+                        reason = f"User override: {recovery_info.get('user_feedback', 'Task marked as completed by user')}"
                     
                 # 保存验证结果到元数据
                 verification_result = {
