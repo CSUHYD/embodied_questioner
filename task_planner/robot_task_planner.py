@@ -2,11 +2,13 @@ from ai2thor.controller import Controller
 import math
 import re
 # import time  # 移除，不再需要用于qa_history时间戳
-import threading
 import sys
 import os
 import json
 import logging
+import random
+import copy
+from typing import List, Dict, Any, Tuple
 
 # 添加data_engine路径到sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +24,14 @@ from RocAgent import RocAgent
 
 # 导入SessionManager
 from session_manager import SessionManager
+
+# 默认随机化配置
+DEFAULT_RANDOMIZE_CONFIG = {
+    "enabled": False,  # 默认关闭，需要手动启用
+    "seed": None,  # 随机种子，None表示每次都不同
+    "randomize_ratio": 0.4,  # 打乱40%的可移动物品
+    "max_attempts": 10,  # 每次操作最大尝试次数
+}
 
 
 def get_data_engine_path():
@@ -102,14 +112,25 @@ def parse_xml_tags(text, tag_name):
 
 
 class SceneManager:
-    def __init__(self, timeout=40, scene_config=None):
-        self.timeout = timeout
+    def __init__(self, scene_config=None):
         self.scene_config = scene_config or SCENE_CONFIG
         
         # 从配置文件加载场景配置
         self.scene_configs = self.scene_config.get("scene_configs", {})
         self.room_configs = self.scene_config.get("room_configs", {})
         self.controller_config = self.scene_config.get("controller_config", {})
+        
+        # 初始化场景随机化配置
+        randomize_config = self.scene_config.get("randomization", DEFAULT_RANDOMIZE_CONFIG)
+        self.randomize_config = randomize_config or {}
+        self.randomize_enabled = self.randomize_config.get("enabled", False)
+        logging.info(f"[SCENE_MANAGER] Randomization config loaded: enabled={self.randomize_enabled}, ratio={self.randomize_config.get('randomize_ratio', 0.5)}")
+        self.randomize_seed = self.randomize_config.get("seed", None)
+        self.randomize_ratio = self.randomize_config.get("randomize_ratio", 0.5)
+        self.max_attempts = self.randomize_config.get("max_attempts", 10)
+        
+        if self.randomize_seed is not None:
+            random.seed(self.randomize_seed)
 
     def get_scene_paths(self, env, room, scene, tasktype):
         """生成场景相关的路径"""
@@ -176,6 +197,13 @@ class SceneManager:
         # 执行场景特定的初始化动作
         self._execute_scene_specific_actions(controller, scene)
         
+        # 执行场景随机化（如果启用）
+        logging.info(f"[SCENE_RANDOMIZATION] Randomization enabled: {self.randomize_enabled}")
+        if self.randomize_enabled:
+            logging.info(f"[SCENE_RANDOMIZATION] Starting scene randomization for scene: {scene}")
+            result = self.randomize_scene_objects(controller, scene)
+            logging.info(f"[SCENE_RANDOMIZATION] Randomization result: {result}")
+        
         metadata = controller.last_event.metadata
         return controller, metadata
 
@@ -189,29 +217,12 @@ class SceneManager:
                 elif "degrees" in action_config:
                     controller.step(action=action, degrees=action_config["degrees"])
 
-    def run_initial_scene(self, scene_diagonal, origin_pos_path, scene, retry_limit=3):
-        """运行场景初始化，支持超时和重试"""
-        controller = None
-        metadata = None
-        retry_count = 0
-
-        def init_task():
-            nonlocal controller
-            nonlocal metadata
-            controller, metadata = self.initialize_scene(scene_diagonal, origin_pos_path, scene) 
-            
-        init_thread = threading.Thread(target=init_task)
-        init_thread.start()
-        init_thread.join(self.timeout) 
-
-        if init_thread.is_alive():
-            logging.warning(f"Initialization exceeded {self.timeout} seconds, retrying...")
-            retry_count += 1
-            controller, metadata = self.initialize_scene(scene_diagonal, origin_pos_path, scene)
-            return controller, metadata
-        else:
-            logging.info("Initialization succeeded") 
-            return controller, metadata
+    def run_initial_scene(self, scene_diagonal, origin_pos_path, scene):
+        """运行场景初始化"""
+        logging.info(f"[SCENE_MANAGER] Initializing scene: {scene}")
+        controller, metadata = self.initialize_scene(scene_diagonal, origin_pos_path, scene)
+        logging.info(f"[SCENE_MANAGER] Scene initialization completed successfully")
+        return controller, metadata
 
     def load_scene_metadata(self, metadata_path):
         """加载场景元数据"""
@@ -248,6 +259,210 @@ class SceneManager:
                 return task
         logging.error(f"Test task with ID '{task_id}' not found")
         return None
+        
+    # ==================== 场景随机化方法 ====================
+    
+    def is_randomization_enabled(self) -> bool:
+        """检查是否启用随机化"""
+        return self.randomize_enabled
+        
+    def randomize_scene_objects(self, controller, scene_name: str = None) -> bool:
+        """
+        随机化场景中的物品位置 - 打乱所有可移动物体的顺序
+        
+        Args:
+            controller: AI2THOR控制器实例
+            scene_name: 场景名称（用于日志）
+            
+        Returns:
+            bool: 是否成功执行随机化
+        """
+        if not self.randomize_enabled:
+            logging.info("Scene randomization is disabled")
+            return False
+            
+        try:
+            logging.info(f"[RANDOMIZATION] Starting object position shuffling for {scene_name or 'unknown scene'}")
+            
+            # 获取场景中所有物品
+            event = controller.last_event
+            if not event.metadata:
+                logging.warning("[RANDOMIZATION] No metadata available for randomization")
+                return False
+                
+            objects = event.metadata.get("objects", [])
+            logging.info(f"[RANDOMIZATION] Total objects in scene: {len(objects)}")
+            if not objects:
+                logging.warning("[RANDOMIZATION] No objects found in scene")
+                return False
+                
+            # 筛选可拾取物品
+            pickupable_objects = self._get_pickupable_objects(objects)
+
+            logging.info(f"[RANDOMIZATION] Found {len(pickupable_objects)} pickupable objects out of {len(objects)} total objects")
+            
+            if len(pickupable_objects) < 2:
+                logging.info("[RANDOMIZATION] Need at least 2 pickupable objects for shuffling")
+                return True
+                
+            # 执行位置打乱 - 打乱所有可拾取物体的位置
+            success = self._shuffle_object_positions(controller, pickupable_objects)
+            
+            if success:
+                logging.info(f"[RANDOMIZATION] Successfully shuffled positions of {len(pickupable_objects)} objects")
+            else:
+                logging.warning("[RANDOMIZATION] Failed to shuffle object positions")
+                
+            return success
+            
+        except Exception as e:
+            logging.error(f"Error during scene randomization: {str(e)}")
+            return False
+            
+    def _get_pickupable_objects(self, objects: List[Dict]) -> List[Dict]:
+        """筛选可拾取的物品"""
+        pickupable = []
+        filtered_counts = {
+            "not_pickupable": 0,
+            "passed_filter": 0
+        }
+        
+        for obj in objects:      
+            # 检查是否可拾取
+            if not obj.get("pickupable", False):
+                filtered_counts["not_pickupable"] += 1
+                continue
+                
+            pickupable.append(obj)
+            filtered_counts["passed_filter"] += 1
+            
+        logging.info(f"[RANDOMIZATION] Pickupable filter results: {filtered_counts}")
+        return pickupable
+        
+    def _get_available_receptacles(self, objects: List[Dict]) -> List[Dict]:
+        """获取可用的接收容器"""
+        receptacles = []
+        
+        for obj in objects:
+            # 检查是否为容器
+            if not obj.get("receptacle", False):
+                continue
+                
+            # 检查是否可见和可交互
+            if not obj.get("visible", False) or not obj.get("isInteractable", False):
+                continue
+                
+            # 如果是可开启的容器，检查是否处于开启状态
+            if obj.get("openable", False) and not obj.get("isOpen", False):
+                continue
+                
+            receptacles.append(obj)
+            
+        return receptacles
+        
+            
+    def randomize_openable_objects(self, controller) -> bool:
+        """随机化可开启物品的状态（如柜子、抽屉等）"""
+        if not self.randomize_enabled:
+            return False
+            
+        try:
+            event = controller.last_event
+            objects = event.metadata.get("objects", [])
+            
+            openable_objects = [
+                obj for obj in objects
+                if obj.get("openable", False) and obj.get("visible", False) and obj.get("isInteractable", False)
+            ]
+            
+            randomized_count = 0
+            for obj in openable_objects:
+                # 随机决定是否改变开启状态
+                if random.random() < 0.3:  # 30% 概率改变状态
+                    obj_id = obj.get("objectId", "")
+                    current_open = obj.get("isOpen", False)
+                    
+                    action = "CloseObject" if current_open else "OpenObject"
+                    event = controller.step(action=action, objectId=obj_id)
+                    
+                    if event.metadata["lastActionSuccess"]:
+                        randomized_count += 1
+                        
+            logging.info(f"Randomized {randomized_count} openable objects")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Error randomizing openable objects: {str(e)}")
+            return False
+    
+    def _shuffle_object_positions(self, controller, pickupable_objects: List[Dict]) -> bool:
+        """
+        打乱所有可拾取物体的位置 - 直接使用TeleportObject修改位置
+        """
+        try:
+            if len(pickupable_objects) < 2:
+                logging.info("[RANDOMIZATION] Need at least 2 objects for position shuffling")
+                return True
+            
+            logging.info(f"[RANDOMIZATION] Starting position shuffling for {len(pickupable_objects)} objects")
+            
+            # 提取所有物体的位置信息
+            positions = []
+            object_ids = []
+            
+            for obj in pickupable_objects:
+                if not isinstance(obj, dict):
+                    logging.warning(f"[RANDOMIZATION] Skipping invalid object: {type(obj)} - {obj}")
+                    continue
+                
+                object_ids.append(obj.get('objectId', ''))
+                positions.append({
+                    'position': obj.get('position', {}),
+                    'rotation': obj.get('rotation', {}),
+                    'parentReceptacles': obj.get('parentReceptacles', [])
+                })
+            
+            if len(positions) < 2:
+                logging.warning("[RANDOMIZATION] Not enough valid objects for shuffling")
+                return False
+            
+            # 打乱位置列表
+            shuffled_positions = positions.copy()
+            random.shuffle(shuffled_positions)
+            
+            # 使用 AI2THOR 的 TeleportObject 操作来直接移动物体
+            shuffled_count = 0
+            for i, (obj_id, new_pos) in enumerate(zip(object_ids, shuffled_positions)):
+                if not obj_id or not new_pos.get('position'):
+                    continue
+                
+                try:
+                    # 直接传送物体到新位置
+                    result = controller.step(
+                        action="TeleportObject",
+                        objectId=obj_id,
+                        position=new_pos['position'],
+                        rotation=new_pos.get('rotation', {'x': 0, 'y': 0, 'z': 0}),
+                        forceAction=True
+                    )
+                    
+                    if result.metadata["lastActionSuccess"]:
+                        shuffled_count += 1
+                        logging.debug(f"[RANDOMIZATION] Successfully teleported object {obj_id}")
+                    else:
+                        logging.debug(f"[RANDOMIZATION] Failed to teleport object {obj_id}: {result.metadata.get('errorMessage', 'Unknown error')}")
+                        
+                except Exception as e:
+                    logging.debug(f"[RANDOMIZATION] Error teleporting object {obj_id}: {str(e)}")
+                    continue
+            
+            logging.info(f"[RANDOMIZATION] Successfully shuffled {shuffled_count}/{len(object_ids)} objects")
+            return shuffled_count > 0
+            
+        except Exception as e:
+            logging.error(f"[RANDOMIZATION] Error during position shuffling: {str(e)}")
+            return False
+    
 
 
 
@@ -2203,7 +2418,7 @@ def main():
     scene = 'FloorPlan3'
     
     # 测试任务配置
-    USE_TEST_TASKS = True  # 设为 True 使用测试任务，False 使用手动指定的任务
+    USE_TEST_TASKS = False  # 设为 True 使用测试任务，False 使用手动指定的任务
     TEST_TASK_ID = "test_001"  # 指定要运行的测试任务ID
     RUN_ALL_TEST_TASKS = False  # 设为 True 运行所有测试任务
     
@@ -2253,7 +2468,9 @@ def main():
         # 使用手动指定的任务
         manual_task = {
             "id": "manual_task",
-            "taskname": "put tomato on the plate",  # 手动指定任务名称
+            # "taskname": "put tomato on the plate",  # 手动指定任务名称
+            # "taskname": "reorganize the kitchen",
+            "taskname": "clean the lettuce and put it in the fridge",
             "description": "Manually specified task",
             "scene": scene,
             "room": room,
@@ -2390,7 +2607,7 @@ def main():
                         "context": f"Verification reason: {reason}. The system checked the final state but detected potential issues with task completion."
                     }
                     
-                    recovery_info = robot_controller.task_planner.handle_execution_error(
+                    recovery_info = robot_controller.handle_execution_error(
                         error_info, taskname,
                         current_step="task verification",
                         remaining_actions=[]

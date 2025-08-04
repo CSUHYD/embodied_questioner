@@ -259,5 +259,11 @@
         "width": 1600,
         "height": 900,
         "fieldOfView": 90
+    },
+    "randomization": {
+        "enabled": true,
+        "seed": null,
+        "randomize_ratio": 0.4,
+        "max_attempts": 10
     }
 }
