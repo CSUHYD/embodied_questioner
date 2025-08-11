@@ -18,12 +18,15 @@ if data_engine_path not in sys.path:
 
 # 从data_engine导入
 from vlmCall_ollama import VLMAPI
-from utils import save_data_to_json,save_image,clear_folder,load_json,get_volume_distance_rate
+from utils import save_image,load_json,get_volume_distance_rate
 from baseAction import BaseAction
 from RocAgent import RocAgent
 
 # 导入SessionManager
 from session_manager import SessionManager
+
+# 导入任务执行器
+from task_executor import execute_task
 
 # 默认随机化配置
 DEFAULT_RANDOMIZE_CONFIG = {
@@ -2481,184 +2484,21 @@ def main():
     
     # 执行任务
     for task_idx, task in enumerate(test_tasks):
-        taskname = task["taskname"]
-        task_id = task.get("id", f"task_{task_idx}")
+        success, message = execute_task(
+            task=task,
+            task_idx=task_idx,
+            scene_manager=scene_manager,
+            model=model,
+            origin_pos_path=origin_pos_path,
+            scene=scene,
+            metadata=metadata,
+            max_retries=2,
+            RobotController=RobotController
+        )
         
-        logging.info("\n\n*********************************************************************")
-        logging.info(f"Running Task ID: {task_id}")
-        logging.info(f"Scene:{scene} Task_Type: {tasktype} Task: {taskname}")
-        logging.info("*********************************************************************\n")
-
-        logging.info("taskname: %s", taskname)
-        
-
-        origin_path = os.path.join(get_task_planner_path(), f"data/data_{tasktype}/{scene}_{tasktype}_{task_idx}")
-        
-        # 计算场景对角线距离
-        scene_diagonal = scene_manager.calculate_scene_diagonal(metadata)
-        
-        max_retries=2
-        error_paths = []
-        
-        # 只初始化一次场景，在所有attempt中复用
-        controller, metadata = scene_manager.run_initial_scene(scene_diagonal, origin_pos_path, scene)
-        
-        for attempt in range(max_retries + 1): 
-            try:
-                # 每次attempt开始时都重置机器人到初始位置，确保状态一致性
-                logging.info(f"[ATTEMPT {attempt + 1}/{max_retries + 1}] Starting task attempt")
-                
-                # 重置到初始位置
-                pos = load_json(origin_pos_path)
-                position = pos["position"]
-                rotation = pos["rotation"]  
-                horizon = pos["cameraHorizon"]   
-                
-                # 执行位置重置
-                reset_result = controller.step(
-                    action="Teleport",
-                    position=position,
-                    rotation=rotation,
-                    horizon=horizon,
-                    standing=True
-                )
-                
-                if not reset_result.metadata["lastActionSuccess"]:
-                    logging.warning(f"[RESET] Failed to reset robot position on attempt {attempt + 1}")
-                else:
-                    logging.info(f"[RESET] Successfully reset robot to initial position: {position}")
-                
-                # 确保机器人处于站立状态
-                controller.step(action="Stand")
-                
-                # 更新metadata
-                metadata = controller.last_event.metadata
-                
-                # 如果有物体被拿着，放下它们
-                for obj in metadata["objects"]:
-                    if obj["isPickedUp"]:
-                        logging.info(f"[RESET] Dropping held object: {obj['objectId']}")
-                        controller.step(action="DropHandObject", forceAction=True)
-
-                # 封装后的机器人控制器
-                robot_controller = RobotController(controller, metadata, model, origin_path)
-                
-                # 步骤1：保存初始观察图片
-                init_image_path = robot_controller.observation_generator.save_initial_observation_image(robot_controller.controller, robot_controller.origin_path)
-                
-                # 步骤2：生成observation
-                observation = robot_controller.generate_observation(init_image_path)
-                logging.info("[OBSERVATION] %s", observation)
-                
-                # 步骤3：高层任务规划（只用高层taskname和observation）
-                # taskname已经在上面直接指定了，不需要从task对象中提取
-                subtasks = robot_controller.plan_high_level_tasks(taskname, observation)
-                logging.info("[INITIAL TASK PLANNING] %s", str(subtasks))
-                
-                # 检查是否需要提问
-                question = robot_controller.ask_general_question_for_plan(taskname, subtasks)
-                
-                if question:
-                    # 处理用户问答交互
-                    need_replan, reason = robot_controller.process_user_response(question, subtasks, taskname)
-                    logging.info("[RE-PLANNING BASED ON USER RESPONSE]")
-                    logging.info('REPLAN?: %s', need_replan)
-                    logging.info('Reason: %s', reason)
-                    if need_replan:
-                        # old_subgoals = robot_controller.task_planner.subgoals
-                        qa_history = robot_controller.get_qa_history()
-                        new_subtasks = robot_controller.task_planner.replan_subtasks_based_on_user_response(
-                            taskname, observation, qa_history, subtasks
-                        )
-                        robot_controller.task_planner.subgoals = new_subtasks
-                        logging.info("[REPLAN] Old subtasks: %s", subtasks)
-                        logging.info("[REPLAN] New subtasks: %s", new_subtasks)
-                        subtasks = new_subtasks
-                        # 你可以在此处继续后续执行新规划的逻辑
-                    else:
-                        logging.info("[NO REPLAN NEEDED] Reason: %s", reason)
-
-
-                # 步骤4：底层任务规划：把subtask细化为可执的 decisions
-                qa_history = robot_controller.get_qa_history()
-                decisions = robot_controller.task_planner.subtasks_to_decisions(subtasks, qa_history)
-                # decisions = subtasks
-                logging.info("[SUBTASKS WITH DECISION] %s", decisions)
-                robot_controller.execute_decisions(taskname, decisions)
-                
-                # 步骤5：验证任务是否成功完成
-                logging.info("[VERIFICATION] Starting task verification...")
-                is_success, reason, confidence = robot_controller.verify_task_completion(
-                    taskname=taskname,
-                    original_plan=subtasks
-                )
-                
-                if is_success:
-                    logging.info(f"[VERIFICATION] ✓ Task completed successfully! (Confidence: {confidence})")
-                    logging.info(f"[VERIFICATION] Reason: {reason}")
-                else:
-                    logging.warning(f"[VERIFICATION] ✗ Task may not be completed. (Confidence: {confidence})")
-                    logging.warning(f"[VERIFICATION] Reason: {reason}")
-                    
-                    # 当验证失败时，请求用户帮助
-                    error_info = {
-                        "error_type": "task_verification_failed",
-                        "error_message": f"Task verification indicates the task may not be completed successfully. Confidence: {confidence}",
-                        "context": f"Verification reason: {reason}. The system checked the final state but detected potential issues with task completion."
-                    }
-                    
-                    recovery_info = robot_controller.handle_execution_error(
-                        error_info, taskname,
-                        current_step="task verification",
-                        remaining_actions=[]
-                    )
-                    
-                    # 根据用户反馈处理验证失败的情况
-                    if recovery_info and recovery_info.get('strategy') == 'retry':
-                        logging.info("[VERIFICATION] User requested retry, re-running verification...")
-                        is_success, reason, confidence = robot_controller.verify_task_completion(
-                            taskname=taskname,
-                            original_plan=subtasks
-                        )
-                    elif recovery_info and recovery_info.get('strategy') == 'accept':
-                        logging.info("[VERIFICATION] User confirmed task completion despite verification concerns")
-                        is_success = True
-                        reason = f"User override: {recovery_info.get('user_feedback', 'Task marked as completed by user')}"
-                    
-                # 保存验证结果到元数据
-                verification_result = {
-                    "task": taskname,
-                    "success": is_success,
-                    "reason": reason,
-                    "confidence": confidence,
-                    "original_plan": subtasks
-                }
-                
-                # 创建验证结果文件
-                import json
-                verification_file = f"{origin_path}/verification_result.json"
-                with open(verification_file, 'w', encoding='utf-8') as f:
-                    json.dump(verification_result, f, ensure_ascii=False, indent=2)
-                logging.info(f"[VERIFICATION] Verification result saved to: {verification_file}")
-                
-                # 如果验证成功，退出重试循环
-                if is_success and confidence in ['high', 'medium']:
-                    logging.info("[VERIFICATION] Task completed successfully, exiting retry loop.")
-                    break
-
-            except Exception as e:
-                logging.error("[ERROR] %s, try again.", e)
-                clear_folder(origin_path)
-            
-                if attempt == max_retries - 1: 
-                    logging.warning("[RETRY %d TIMES, JUMP THE TASK]", max_retries)
-                    error_paths.append(origin_path)  
-                    save_data_to_json(error_paths, os.path.join(get_task_planner_path(), "wrong_generte_path_list.json"))
-                    break  # Exit the retry loop for this task
-        
-        # Stop the controller after all attempts for this task
-        controller.stop()
-        logging.info(f"[TASK COMPLETE] Finished task {task_id}: {taskname}")
+        if not success:
+            logging.error(f"Task {task.get('id', f'task_{task_idx}')} failed: {message}")
+            # 错误路径已在execute_task中处理
     
     # All tasks completed
     logging.info("All tasks completed successfully!")
